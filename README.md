@@ -1,3 +1,9 @@
+# Introduction
+
+This project contains the Label Store API for The Ocean Cleanup. This is used
+to manage the full lifecycle of manually-labeled images from many different
+sources.
+
 # Database
 
 ## How-to: Create new database version
