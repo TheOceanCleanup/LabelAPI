@@ -22,7 +22,8 @@ paths:
     get:
       summary: List all the image sets in the database
       tags:
-          - internal
+        - internal
+      operationId: handlers.image_sets.list_imagesets
       parameters:
         - name: page
           in: query
@@ -54,7 +55,8 @@ paths:
     post:
       summary: Create a new image set
       tags:
-          - internal
+        - internal
+      operationId: handlers.image_sets.add_imageset
       requestBody:
         description: New image set item
         required: true
@@ -79,7 +81,8 @@ paths:
       summary: Get an image. If authenticated, this will redirect to the actual
         image in blobstorage, with a SAS token for access.
       tags:
-          - external
+        - external
+      operationId: handlers.images.get_image_url
       parameters:
         - name: image_id
           in: path
@@ -115,6 +118,7 @@ paths:
       summary: Show the objects for a certain image
       tags:
         - internal
+      operationId: handlers.images.get_objects
       parameters:
         - name: image_id
           in: path
@@ -159,6 +163,7 @@ paths:
       summary: List all the labeling campaigns in the database
       tags:
         - internal
+      operationId: handlers.campaigns.list_campaigns
       parameters:
         - name: page
           in: query
@@ -190,7 +195,8 @@ paths:
     post:
       summary: Create a new campaign
       tags:
-          - internal
+        - internal
+      operationId: handlers.campaigns.add_campaign
       requestBody:
         description: New campaign item
         required: true
@@ -215,7 +221,8 @@ paths:
     get:
       summary: Get metadata of a campaign
       tags:
-          - internal
+        - internal
+      operationId: handlers.campaigns.get_metadata
       parameters:
         - name: campaign_id
           in: path
@@ -241,6 +248,7 @@ paths:
       summary: Get a list of images for a campaign.
       tags:
         - external
+      operationId: handlers.campaigns.get_images
       parameters:
         - name: campaign_id
           in: path
@@ -281,6 +289,7 @@ paths:
       summary: Add images to a campaign
       tags:
         - internal
+      operationId: handlers.campaigns.add_images
       parameters:
         - name: campaign_id
           in: path
@@ -313,6 +322,7 @@ paths:
         image and the objects found in that image.
       tags:
         - internal
+      operationId: handlers.campaigns.get_objects
       parameters:
         - name: campaign_id
           in: path
@@ -337,6 +347,7 @@ paths:
       summary: Submit found objects for given images in the campaign
       tags:
         - external
+      operationId: handlers.campaigns.add_objects
       parameters:
         - name: campaign_id
           in: path
