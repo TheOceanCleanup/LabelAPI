@@ -539,21 +539,34 @@ components:
           maximum: 1.0
           example: 0.87
     BoundingBox:
-      type: array
-      items:
-        description: Pixel coordinates per corner, clockwise starting top left.
-          Each coordinate is provided as [x, y].
-        $ref: '#/components/schemas/Corner'
-      minItems: 4
-      maxItems: 4
-    Corner:
-      type: array
-      items:
-        description: Pixel coordinate
-        type: integer
-      minItems: 2
-      maxItems: 2
-
+      type: object
+      required:
+        - xmin
+        - xmax
+        - ymin
+        - ymax
+      properties:
+        xmin:
+          description: Start of the bounding box on the horizontal axis, as
+            pixel
+          type: integer
+          minimum: 0
+          example: 123
+        xmax:
+          description: End of the bounding box on the horizontal axis, as pixel
+          type: integer
+          minimum: 0
+          example: 256
+        ymin:
+          description: Start of the bounding box on the vertical axis, as pixel
+          type: integer
+          minimum: 0
+          example: 187
+        ymax:
+          description: End of the bounding box on the vertical axis, as pixel
+          type: integer
+          minimum: 0
+          example: 231
     # Campaign
     CampaignList:
       type: object
