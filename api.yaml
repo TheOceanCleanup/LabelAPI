@@ -1,0 +1,887 @@
+openapi: 3.0.0
+info:
+  version: 0.0.1
+  description: API for The Ocean Cleanup Labeling system
+  title: The Ocean Cleanup Label
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Some example server
+tags:
+  - name: external
+    description: These operations can be accessed by both internal users with
+      their personal access keys and by external parties if they have the
+      appropriate api keys.
+  - name: internal
+    description: These operations can only be used by internal employees, with
+      their personal access keys.
+# security:
+#   - apiKey: []
+#     apiSecret: []
+paths:
+  /image_sets:
+    get:
+      summary: List all the image sets in the database
+      tags:
+          - internal
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Page of results to retrieve
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+        - name: per_page
+          in: query
+          required: false
+          description: Number of results to retrieve per page
+          schema:
+            type: integer
+            minimum: 1
+            example: 10
+      responses:
+        "200":
+          description: A paged array of image sets
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageSetList"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      summary: Create a new image set
+      tags:
+          - internal
+      requestBody:
+        description: New image set item
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewImageSet"
+      responses:
+        "200":
+          description: The created image set
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageSet"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        default:
+          $ref: "#/components/responses/Error"
+
+  /images/{image_id}:
+    get:
+      summary: Get an image. If authenticated, this will redirect to the actual
+        image in blobstorage, with a SAS token for access.
+      tags:
+          - external
+      parameters:
+        - name: image_id
+          in: path
+          required: true
+          description: The id of the desired image
+          schema:
+            type: integer
+      responses:
+        "303":
+          description: Redirect to the location of the image
+          content:
+            application/json:
+              schema: 
+                type: string
+                format: uri
+                example: https://toc.blob.core.windows.net/tss/uploads/20201012-DroneFootage/img00001.jpg?sv=etc...
+          headers:
+            Location:
+              description: The location where the image can be found, including
+                SAS token.
+              schema:
+                type: string
+                format: uri
+                example: https://toc.blob.core.windows.net/tss/uploads/20201012-DroneFootage/img00001.jpg?sv=etc...
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/DoesNotExistError"
+        default:
+          $ref: "#/components/responses/Error"
+  /images/{image_id}/objects:
+    get:
+      summary: Show the objects for a certain image
+      tags:
+        - internal
+      parameters:
+        - name: image_id
+          in: path
+          required: true
+          description: The id of the desired image
+          schema:
+            type: integer
+        - name: campaigns
+          in: query
+          required: false
+          description: Optionally, list the IDs of campaigns you want the
+            objects. If multiple are provided, objects are returned for the
+            first campaign in the list for which objects exist for this image -
+            meaning only the objects from exactly one campaign will ever be
+            returned. If no campaign is provided, objects from any campaign
+            will be returned, prioritized by the most recent campaign.
+          schema:
+            type: array
+            items:
+              description: Campaign ID
+              type: integer
+              minimum: 0
+      responses:
+        "200":
+          description: A list of objects in this image set
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Object"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/DoesNotExistError"
+        default:
+          $ref: "#/components/responses/Error"
+
+
+  /campaigns:
+    get:
+      summary: List all the labeling campaigns in the database
+      tags:
+        - internal
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Page of results to retrieve
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+        - name: per_page
+          in: query
+          required: false
+          description: Number of results to retrieve per page
+          schema:
+            type: integer
+            minimum: 1
+            example: 10
+      responses:
+        "200":
+          description: A paged array of labeling campaigns
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignList"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      summary: Create a new campaign
+      tags:
+          - internal
+      requestBody:
+        description: New campaign item
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NewCampaign"
+      responses:
+        "200":
+          description: The created campaign. This contains the token that can
+            be used to interact with this campaign. This will be provided only
+            this time, as it will be stored in hashed form afterwards.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreatedCampaign"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        default:
+          $ref: "#/components/responses/Error"
+  /campaigns/{campaign_id}:
+    get:
+      summary: Get metadata of a campaign
+      tags:
+          - internal
+      parameters:
+        - name: campaign_id
+          in: path
+          required: true
+          description: The id of the campaign
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The metadata of this campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Campaign"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/DoesNotExistError"
+        default:
+          $ref: "#/components/responses/Error"
+  /campaigns/{campaign_id}/images:
+    get:
+      summary: Get a list of images for a campaign.
+      tags:
+        - external
+      parameters:
+        - name: campaign_id
+          in: path
+          required: true
+          description: The id of the campaign
+          schema:
+            type: integer
+        - name: page
+          in: query
+          required: false
+          description: Page of results to retrieve
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+        - name: per_page
+          in: query
+          required: false
+          description: Number of results to retrieve per page
+          schema:
+            type: integer
+            minimum: 1
+            example: 10
+      responses:
+        "200":
+          description: A paged array of images in the campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignImageList"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/DoesNotExistError"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      summary: Add images to a campaign
+      tags:
+        - internal
+      parameters:
+        - name: campaign_id
+          in: path
+          required: true
+          description: The id of the campaign
+          schema:
+            type: integer
+      requestBody:
+        description: A list of images to add to the campaign. Image can be
+          provided either as internal ID or by blobstorage filepath.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/NewCampaignImage"
+      responses:
+        "200":
+          description: Successfully added images to campaign
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/DoesNotExistError"
+        default:
+          $ref: "#/components/responses/Error"
+  /campaigns/{campaign_id}/objects:
+    get:
+      summary: Get a list of all images in a campaign, a download link for the
+        image and the objects found in that image.
+      tags:
+        - internal
+      parameters:
+        - name: campaign_id
+          in: path
+          required: true
+          description: The id of the campaign
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: A paged array of images and objects in the campaign
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CampaignImageObjectList"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/DoesNotExistError"
+        default:
+          $ref: "#/components/responses/Error"
+    put:
+      summary: Submit found objects for given images in the campaign
+      tags:
+        - external
+      parameters:
+        - name: campaign_id
+          in: path
+          required: true
+          description: The id of the campaign
+          schema:
+            type: integer
+      requestBody:
+        description: A list of detected objects to add to the campaign. This
+          will override any objects already stored for an image.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/NewImageObjectList"
+      responses:
+        "200":
+          description: Successfully added the labels to the system
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/DoesNotExistError"
+        default:
+          $ref: "#/components/responses/Error"
+
+components:
+  schemas:
+    # Image & Image set
+    ImageSetList:
+      type: object
+      required:
+        - pagination
+        - image_sets
+      properties:
+        pagination:
+          description: Pagination data
+          type: object
+          $ref: "#/components/schemas/Paginate"
+        image_sets:
+          description: List of image set objects
+          type: array
+          items:
+            $ref: "#/components/schemas/ImageSet"
+    ImageSet:
+      type: object
+      required:
+        - imageset_id
+        - title
+        - status
+        - metadata
+        - blobstorage_path
+        - date_created
+        - date_finished
+        - created_by
+      properties:
+        imageset_id:
+          description: ID of the image set
+          type: integer
+          minimum: 0
+          example: 42
+        title:
+          description: Name of the image set
+          type: string
+          example: DroneFootage
+        status:
+          $ref: '#/components/schemas/ImageSetStatus'
+        metadata:
+          description: Additional, flexibly structured, metadata.
+          nullable: true
+          type: object
+        blobstorage_path:
+          description: Location where the data of this image set is stored
+          type: string
+          format: path
+          nullable: true
+          example: /uploads/20201012-DroneFootage/
+        date_created:
+          description: Date and time this image set was created
+          type: string
+          format: date-time
+          example: 2020-10-12T11:42:42Z
+        date_finished:
+          description: Date and time this image set was set to finished
+          type: string
+          format: date-time
+          example: 2020-10-12T11:42:42Z
+        created_by:
+          description: User (as email) that created this image set
+          type: string
+          format: email
+    NewImageSet:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          description: Name of the image set
+          type: string
+          example: DroneFootage
+        metadata:
+          description: Additional, flexibly structured, metadata.
+          nullable: true
+          type: object
+
+    # Labeled objects
+    Object:
+      type: object
+      required:
+        - object_id
+        - image_id
+        - campaign_id
+        - label
+        - bounding_box
+        - confidence
+        - date_added
+      properties:
+        object_id:
+          description: ID of the object
+          type: integer
+          minimum: 0
+          example: 42
+        image_id:
+          description: ID of the image this object is found in
+          type: integer
+          minimum: 0
+          example: 42
+        campaign_id:
+          description: ID of the campaign that labeled this object
+          type: integer
+          minimum: 0
+          example: 42
+        label:
+          description: The label attached to this object
+          type: string
+          example: PET
+        bounding_box:
+          $ref: "#/components/schemas/BoundingBox"
+        confidence:
+          description: Confidence of this label
+          type: number
+          nullable: true
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          example: 0.87
+        date_added:
+          description: Date and time this label was added to the database
+          type: string
+          format: date-time
+          example: 2020-10-12T11:42:42Z
+    NewImageObjectList:
+      type: array
+      items:
+        type: object
+        $ref: "#/components/schemas/NewImageObjects"
+    NewImageObjects:
+      type: object
+      required:
+        - image_id
+        - objects
+      properties:
+        image_id:
+          description: ID of the image the objects are found in
+          type: integer
+          minimum: 0
+          example: 42
+        objects:
+          type: array
+          items:
+            $ref: "#/components/schemas/NewObject"
+    NewObject:
+      type: object
+      required:
+        - bounding_box
+        - label
+      properties:
+        bounding_box:
+          $ref: "#/components/schemas/BoundingBox"
+        label:
+          description: The name of the detected object.
+          type: string
+          example: PET
+        label_translated:
+          description: An optional name to set for the object. If this is
+            provided, this will be used as the main name for the label, the
+            value set in "label" will be stored as label_original. This can be
+            used to store a difference between TOC label taxonomy and a
+            labeling providers' taxonomy.
+          nullable: true
+          type: string
+          example: Plastic
+        confidence:
+          description: How certain this labeling is
+          nullable: true
+          type: number
+          format: float
+          minimum: 0.0
+          maximum: 1.0
+          example: 0.87
+    BoundingBox:
+      type: array
+      items:
+        description: Pixel coordinates per corner, clockwise starting top left.
+          Each coordinate is provided as [x, y].
+        $ref: '#/components/schemas/Corner'
+      minItems: 4
+      maxItems: 4
+    Corner:
+      type: array
+      items:
+        description: Pixel coordinate
+        type: integer
+      minItems: 2
+      maxItems: 2
+
+    # Campaign
+    CampaignList:
+      type: object
+      required:
+        - pagination
+        - campaigns
+      properties:
+        pagination:
+          description: Pagination data
+          type: object
+          $ref: "#/components/schemas/Paginate"
+        campaigns:
+          description: List of labeling campaigns
+          type: array
+          items:
+            $ref: "#/components/schemas/Campaign"
+    Campaign:
+      type: object
+      required:
+        - campaign_id
+        - title
+        - status
+        - progress
+        - metadata
+        - label_translations
+        - date_created
+        - date_started
+        - date_completed
+        - date_finished
+        - created_by
+      properties:
+        campaign_id:
+          description: ID of the campaign
+          type: integer
+          minimum: 0
+          example: 42
+        title:
+          description: Name of the campaign
+          type: string
+          example: DroneFootage
+        status:
+          $ref: '#/components/schemas/CampaignStatus'
+        progress:
+          description: How much of the campaign has been labeled so far?
+          type: object
+          required:
+            - total
+            - done
+          properties:
+            total:
+              description: Total number of images that need to be labeled
+              type: integer
+              minimum: 0
+              example: 42
+            done:
+              description: Number of images that has been labeled (and
+                submitted)
+              type: integer
+              minimum: 0
+              example: 12
+        metadata:
+          description: Additional, flexibly structured, metadata.
+          nullable: true
+          type: object
+        label_translations:
+          description: Optional translations between campaign-provided labels
+            and The Ocean Cleanup labels
+          nullable: true
+          type: object
+        date_created:
+          description: Date and time this campaign was created
+          type: string
+          format: date-time
+          example: 2020-10-12T11:42:42Z
+        date_started:
+          description: Date and time this campaign was set to started
+          type: string
+          format: date-time
+          example: 2020-10-12T11:42:42Z
+        date_completed:
+          description: Date and time this campaign was set to completed
+          type: string
+          format: date-time
+          example: 2020-10-12T11:42:42Z
+        date_finished:
+          description: Date and time this campaign was set to finished
+          type: string
+          format: date-time
+          example: 2020-10-12T11:42:42Z
+        created_by:
+          description: User (as email) that created this campaign
+          type: string
+          format: email
+    NewCampaign:
+      type: object
+      required:
+        - title
+      properties:
+        title:
+          description: Name of the image set
+          type: string
+          example: DroneFootage
+        metadata:
+          description: Additional, flexibly structured, metadata.
+          nullable: true
+          type: object
+        label_translations:
+          description: Optional translations between campaign-provided labels
+            and The Ocean Cleanup labels
+          nullable: true
+          type: object
+    CreatedCampaign:
+      type: object
+      properties:
+        access_token:
+          description: Access token that can be used to submit labels for the
+            campaign or to access images contained in the campaign. Will be
+            provided only in the response to a campaign creation - after that
+            the secret is not retrievable as it is stored in hashed form.
+          type: object
+          properties:
+            apikey:
+              type: string
+            apisecret:
+              type: string
+
+    # Images in campaign
+    CampaignImageList:
+      type: object
+      required:
+        - pagination
+        - images
+      properties:
+        pagination:
+          description: Pagination data
+          type: object
+          $ref: "#/components/schemas/Paginate"
+        images:
+          description: List of images in the campaign
+          type: array
+          items:
+            $ref: "#/components/schemas/CampaignImage"
+    CampaignImage:
+      type: object
+      required:
+        - image_id
+        - url
+      properties:
+        image_id:
+          description: ID of the image
+          type: integer
+          minimum: 0
+          example: 42
+        url:
+          description: URL where the image can be retrieved. Use this as
+            <basepath of the API>/<provided url>. For example, if the url
+            returned here is /images/42, the full path could be
+            http://localhost:8080/api/v1/images/42
+          type: string
+          format: uri
+          example: /images/42
+    NewCampaignImage:
+      description: Provide either the ID or the URL to an image to add to a
+        campaign.
+      oneOf:
+        - type: object
+          required:
+              - id
+          properties:
+            id:
+              description: Internal ID of the image
+              type: integer
+              minimum: 0
+              example: 42
+        - type: object
+          required:
+              - filepath
+          properties:
+            filepath:
+              description: Path in storage where the image can be found
+              type: string
+              format: path
+              example: /uploads/20201012-DroneFootage/img00001.jpg
+    CampaignImageObjectList:
+      type: object
+      required:
+        - pagination
+        - images
+      properties:
+        pagination:
+          description: Pagination data
+          type: object
+          $ref: "#/components/schemas/Paginate"
+        images:
+          description: List of images with objects
+          type: array
+          items:
+            $ref: "#/components/schemas/ImageWithObjects"
+
+    ImageWithObjects:
+      type: object
+      required:
+        - image_id
+        - url
+        - objects
+      properties:
+        image_id:
+          description: ID of the image
+          type: integer
+          minimum: 0
+          example: 42
+        url:
+          description: URL where the image can be retrieved. Use this as
+            <basepath of the API>/<provided url>. For example, if the url
+            returned here is /images/42, the full path could be
+            http://localhost:8080/api/v1/images/42
+          type: string
+          format: uri
+          example: /images/42
+        objects:
+          description: List of objects in the image
+          type: array
+          items:
+            $ref: "#/components/schemas/Object"
+
+    # Helper objects
+    ImageSetStatus:
+      description: Status an imageset can be in
+      type: string
+      enum: [created, finished]
+    CampaignStatus:
+      description: Status a campaign can be in
+      type: string
+      enum: [created, active, complete, finished]
+
+    Paginate:
+      type: object
+      required:
+        - page
+        - pages
+        - total
+        - per_page
+        - next
+        - prev
+      properties:
+        page:
+          description: Page that is returned
+          type: integer
+          minimum: 1
+          example: 2
+        pages:
+          description: Total number of pages
+          type: integer
+          minimum: 1
+          example: 3
+        total:
+          description: Total number of results (over all pages)
+          type: integer
+          minimum: 0
+          example: 26
+        per_page:
+          description: Number of items per page
+          type: integer
+          minimum: 1
+          example: 10
+        next:
+          description: Number of the next page, or null if no next page exists
+          type: integer
+          nullable: true
+          minimum: 1
+          example: 3
+        prev:
+          description: Number of the previous page, or null if no next page
+            exists
+          type: integer
+          nullable: true
+          minimum: 1
+          example: 1
+
+  responses:
+    # Error messages
+    UnauthorizedError:
+      description: API key is missing or invalid
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Unauthorized request please make sure you set the
+                  Application-Key and Application-Secret in the header
+    DoesNotExistError:
+      description: The requested resource does not exist
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: The requested resource does not exist
+    Error:
+      description: A generic error message
+      content:
+        application/json:
+          schema:
+            type: object
+            required:
+              - detail
+              - status
+            properties:
+              status:
+                type: integer
+                format: integer32
+              detail:
+                type: string
+              title:
+                type: string
+              type:
+                type: string
+
+  # securitySchemes:
+  #   apiKey:
+  #     type: apiKey
+  #     in: header
+  #     name: Authentication-Key
+  #   apiSecret:
+  #     type: apiKey
+  #     in: header
+  #     name: Authentication-Secret
