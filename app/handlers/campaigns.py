@@ -16,6 +16,15 @@ def get_metadata(campaign_id):
     return "Not Implemented: campaigns.get_metadata"
 
 
+def change_status(campaign_id, body):
+    """
+    PUT /campaigns/{campaign_id}
+
+    Change the status of a campaign
+    """
+    return "Not Implemented: campaigns.change_status"
+
+
 def get_objects(campaign_id):
     """
     GET /campaigns/{campaign_id}/objects

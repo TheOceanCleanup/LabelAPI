@@ -6,6 +6,9 @@ from flask_migrate import Migrate
 from common.db import db
 import os
 
+from swagger_ui_bundle import swagger_ui_3_path
+
+
 
 class App:
 
