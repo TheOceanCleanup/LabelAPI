@@ -75,7 +75,149 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         default:
           $ref: "#/components/responses/Error"
+  /image_sets/{imageset_id}:
+    put:
+      summary: Change the status of an imageset
+      tags:
+        - internal
+      operationId: handlers.image_sets.change_status
+      parameters:
+        - name: imageset_id
+          in: path
+          required: true
+          description: The id of the image set
+          schema:
+            type: integer
+      requestBody:
+        description: The new status to set the image set to
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - new_status
+              properties:
+                new_status:
+                  $ref: "#/components/schemas/ImageSetStatus"
+      responses:
+        "200":
+          description: Successfully changed the image set status
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/DoesNotExistError"
+        default:
+          $ref: "#/components/responses/Error"
+  /image_sets/{imageset_id}/images:
+    get:
+      summary: Get a list of images for an image set.
+      tags:
+        - internal
+      operationId: handlers.image_sets.get_images
+      parameters:
+        - name: imageset_id
+          in: path
+          required: true
+          description: The id of the image set
+          schema:
+            type: integer
+        - name: page
+          in: query
+          required: false
+          description: Page of results to retrieve
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+        - name: per_page
+          in: query
+          required: false
+          description: Number of results to retrieve per page
+          schema:
+            type: integer
+            minimum: 1
+            example: 10
+      responses:
+        "200":
+          description: A paged array of images in the image set
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageList"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/DoesNotExistError"
+        default:
+          $ref: "#/components/responses/Error"
+    post:
+      summary: Add images to an imageset
+      tags:
+        - internal
+      operationId: handlers.image_sets.add_images
+      parameters:
+        - name: imageset_id
+          in: path
+          required: true
+          description: The id of the image set
+          schema:
+            type: integer
+      requestBody:
+        description: A list of images to add to the image set. Image can be
+          provided either as internal ID or by blobstorage filepath.
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/NewImageToContainer"
+      responses:
+        "200":
+          description: Successfully added images to imageset
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/DoesNotExistError"
+        default:
+          $ref: "#/components/responses/Error"
 
+
+  /images:
+    get:
+      summary: List all images in the system.
+      tags:
+        - internal
+      operationId: handlers.images.list_images
+      parameters:
+        - name: page
+          in: query
+          required: false
+          description: Page of results to retrieve
+          schema:
+            type: integer
+            minimum: 1
+            example: 1
+        - name: per_page
+          in: query
+          required: false
+          description: Number of results to retrieve per page
+          schema:
+            type: integer
+            minimum: 1
+            example: 100
+      responses:
+        "200":
+          description: A paged array of images
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageList"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        default:
+          $ref: "#/components/responses/Error"
   /images/{image_id}:
     get:
       summary: Get an image. If authenticated, this will redirect to the actual
@@ -243,6 +385,39 @@ paths:
           $ref: "#/components/responses/DoesNotExistError"
         default:
           $ref: "#/components/responses/Error"
+    put:
+      summary: Change the status of a campaign
+      tags:
+        - internal
+      operationId: handlers.campaigns.change_status
+      parameters:
+        - name: campaign_id
+          in: path
+          required: true
+          description: The id of the campaign
+          schema:
+            type: integer
+      requestBody:
+        description: The new status to set the campaign to
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - new_status
+              properties:
+                new_status:
+                  $ref: "#/components/schemas/CampaignStatus"
+      responses:
+        "200":
+          description: Successfully changed the campaign status
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/DoesNotExistError"
+        default:
+          $ref: "#/components/responses/Error"
   /campaigns/{campaign_id}/images:
     get:
       summary: Get a list of images for a campaign.
@@ -278,7 +453,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CampaignImageList"
+                $ref: "#/components/schemas/ImagePathList"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
         "404":
@@ -306,7 +481,7 @@ paths:
             schema:
               type: array
               items:
-                $ref: "#/components/schemas/NewCampaignImage"
+                $ref: "#/components/schemas/NewImageToContainer"
       responses:
         "200":
           description: Successfully added images to campaign
@@ -434,6 +609,7 @@ components:
         date_finished:
           description: Date and time this image set was set to finished
           type: string
+          nullable: true
           format: date-time
           example: 2020-10-12T11:42:42Z
         created_by:
@@ -453,6 +629,176 @@ components:
           description: Additional, flexibly structured, metadata.
           nullable: true
           type: object
+    ImageList:
+      type: object
+      required:
+        - pagination
+        - images
+      properties:
+        pagination:
+          description: Pagination data
+          type: object
+          $ref: "#/components/schemas/Paginate"
+        images:
+          description: List of images
+          type: array
+          items:
+            $ref: "#/components/schemas/Image"
+    Image:
+      type: object
+      required:
+        - image_id
+        - blobstorage_path
+        - imageset
+        - date_taken
+        - location_taken
+        - type
+        - metadata
+        - tss_id
+        - file
+      properties:
+        image_id:
+          description: ID of the image
+          type: integer
+          minimum: 0
+          example: 42
+        blobstorage_path:
+          description: Path to the image in storage
+          type: string
+          example: /uploads/20201012-DroneFootage/img00001.jpg
+        imageset:
+          description: Imageset this is a part oneOf
+          type: object
+          nullable: true
+          required:
+            - imageset_id
+            - title
+          properties:
+            imageset_id:
+              description: ID of the image set
+              type: integer
+              minimum: 0
+              example: 42
+            title:
+              description: Name of the image set
+              type: string
+              example: DroneFootage
+        date_taken:
+          description: The date & time this image was taken
+          type: string
+          nullable: true
+          format: date-time
+          example: 2020-10-12T11:42:42Z
+        location_taken:
+          description: The location this image was taken
+          type: string
+          nullable: true
+        type:
+          description: The type of this image
+          type: string
+          nullable: true
+          example: Drone
+        metadata:
+          description: Additional, flexibly structured, metadata.
+          nullable: true
+          type: object
+        tss_id:
+          description: If this image is in the Time Series Store, this
+            identifies its entry in that database
+          type: string
+          nullable: true
+        file:
+          type: object
+          required:
+            - filetype
+            - filesize
+            - dimension
+          properties:
+            filetype:
+              description: Type of file
+              type: string
+              nullable: true
+              example: JPEG
+            filesize:
+              description: Size of the file on disk, in bytes
+              type: integer
+              nullable: true
+              minimum: 0
+              example: 123456
+            dimensions:
+              type: object
+              required:
+                - width
+                - height
+              properties:
+                width:
+                  description: Width of the image in pixels
+                  type: integer
+                  nullable: true
+                  minimum: 0
+                  example: 1920
+                height:
+                  description: Height of the image in pixels
+                  type: integer
+                  nullable: true
+                  minimum: 0
+                  example: 1080
+    ImagePathList:
+      type: object
+      required:
+        - pagination
+        - images
+      properties:
+        pagination:
+          description: Pagination data
+          type: object
+          $ref: "#/components/schemas/Paginate"
+        images:
+          description: Paginated list of images
+          type: array
+          items:
+            $ref: "#/components/schemas/ImagePath"
+    ImagePath:
+      type: object
+      required:
+        - image_id
+        - url
+      properties:
+        image_id:
+          description: ID of the image
+          type: integer
+          minimum: 0
+          example: 42
+        url:
+          description: URL where the image can be retrieved. Use this as
+            <basepath of the API>/<provided url>. For example, if the url
+            returned here is /images/42, the full path could be
+            http://localhost:8080/api/v1/images/42
+          type: string
+          format: uri
+          example: /images/42
+    NewImageToContainer:
+      description: Provide either the ID or the URL to an image to add to a
+        an entity.
+      oneOf:
+        - type: object
+          required:
+              - id
+          properties:
+            id:
+              description: Internal ID of the image
+              type: integer
+              minimum: 0
+              example: 42
+        - type: object
+          required:
+              - filepath
+          properties:
+            filepath:
+              description: Path in storage where the image can be found
+              type: string
+              format: path
+              example: /uploads/20201012-DroneFootage/img00001.jpg
 
     # Labeled objects
     Object:
@@ -705,62 +1051,6 @@ components:
               type: string
 
     # Images in campaign
-    CampaignImageList:
-      type: object
-      required:
-        - pagination
-        - images
-      properties:
-        pagination:
-          description: Pagination data
-          type: object
-          $ref: "#/components/schemas/Paginate"
-        images:
-          description: List of images in the campaign
-          type: array
-          items:
-            $ref: "#/components/schemas/CampaignImage"
-    CampaignImage:
-      type: object
-      required:
-        - image_id
-        - url
-      properties:
-        image_id:
-          description: ID of the image
-          type: integer
-          minimum: 0
-          example: 42
-        url:
-          description: URL where the image can be retrieved. Use this as
-            <basepath of the API>/<provided url>. For example, if the url
-            returned here is /images/42, the full path could be
-            http://localhost:8080/api/v1/images/42
-          type: string
-          format: uri
-          example: /images/42
-    NewCampaignImage:
-      description: Provide either the ID or the URL to an image to add to a
-        campaign.
-      oneOf:
-        - type: object
-          required:
-              - id
-          properties:
-            id:
-              description: Internal ID of the image
-              type: integer
-              minimum: 0
-              example: 42
-        - type: object
-          required:
-              - filepath
-          properties:
-            filepath:
-              description: Path in storage where the image can be found
-              type: string
-              format: path
-              example: /uploads/20201012-DroneFootage/img00001.jpg
     CampaignImageObjectList:
       type: object
       required:
