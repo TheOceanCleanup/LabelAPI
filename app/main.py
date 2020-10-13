@@ -1,13 +1,11 @@
 import connexion
 from flask_migrate import Migrate
-# from models.campaign import Campaign, CampaignImage
-# from models.image import Image, ImageSet
-# from models.object import Object
+from models.campaign import Campaign, CampaignImage
+from models.image import Image, ImageSet
+from models.object import Object
+from models.user import User
 from common.db import db
 import os
-
-from swagger_ui_bundle import swagger_ui_3_path
-
 
 
 class App:
