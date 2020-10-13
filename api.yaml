@@ -2,7 +2,7 @@ openapi: 3.0.0
 info:
   version: 0.0.1
   description: API for The Ocean Cleanup Labeling system
-  title: The Ocean Cleanup Label
+  title: The Ocean Cleanup Label API
 servers:
   - url: http://localhost:8080/api/v1
     description: Some example server
@@ -624,6 +624,8 @@ components:
         title:
           description: Name of the image set
           type: string
+          minLength: 1
+          maxLength: 128
           example: DroneFootage
         metadata:
           description: Additional, flexibly structured, metadata.
@@ -877,6 +879,8 @@ components:
         label:
           description: The name of the detected object.
           type: string
+          minLength: 1
+          maxLength: 128
           example: PET
         label_translated:
           description: An optional name to set for the object. If this is
@@ -1025,6 +1029,8 @@ components:
         title:
           description: Name of the image set
           type: string
+          minLength: 1
+          maxLength: 128
           example: DroneFootage
         metadata:
           description: Additional, flexibly structured, metadata.
@@ -1037,18 +1043,26 @@ components:
           type: object
     CreatedCampaign:
       type: object
-      properties:
-        access_token:
-          description: Access token that can be used to submit labels for the
-            campaign or to access images contained in the campaign. Will be
-            provided only in the response to a campaign creation - after that
-            the secret is not retrievable as it is stored in hashed form.
-          type: object
+      allOf:
+        - $ref: "#/components/schemas/Campaign"
+        - type: object
+          required:
+            - access_token
           properties:
-            apikey:
-              type: string
-            apisecret:
-              type: string
+            access_token:
+                description: Access token that can be used to submit labels for the
+                  campaign or to access images contained in the campaign. Will be
+                  provided only in the response to a campaign creation - after that
+                  the secret is not retrievable as it is stored in hashed form.
+                type: object
+                required:
+                  - apikey
+                  - apisecret
+                properties:
+                  apikey:
+                    type: string
+                  apisecret:
+                    type: string
 
     # Images in campaign
     CampaignImageObjectList:
