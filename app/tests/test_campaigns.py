@@ -151,3 +151,144 @@ def test_images_in_campaign_with_user_key(client, app, db, mocker):
     response = client.get("/api/v1/campaigns/1/images", headers=headers)
     assert response.status_code == 200
     assert response.json == "Not Implemented: campaigns.get_images"
+
+
+def test_add_objects_to_images_in_campaign_with_campaign_key(client, app, db, mocker):
+    headers = get_headers()  # TODO: Change this to campaign keys
+
+    # TODO: add some campaigns and images to DB and set IDs below
+
+    json_payload = [
+        {
+            'image_id': 1,
+            'objects': [
+                {
+                    'bounding_box': {
+                        'xmin': 123, 'xmax': 256, 'ymin': 187, 'ymax': 231
+                    },
+                    'label': "PET"
+                },
+                {
+                    'bounding_box': {
+                        'xmin': 234, 'xmax': 324, 'ymin': 564, 'ymax': 765
+                    },
+                    'label': "Organic"
+                }
+            ]
+        },
+        {
+            'image_id': 3,
+            'objects': [
+                {
+                    'bounding_box': {
+                        'xmin': 23, 'xmax': 98, 'ymin': 1000, 'ymax': 1023
+                    },
+                    'label': "Plastic"
+                },
+                {
+                    'bounding_box': {
+                        'xmin': 564, 'xmax': 978, 'ymin': 342, 'ymax': 675
+                    },
+                    'label': "Metal"
+                }
+            ]
+        }
+    ]
+
+    response = client.put("/api/v1/campaigns/1/objects", json=json_payload, headers=headers)
+    assert response.status_code == 200
+    assert response.json == "Not Implemented: campaigns.add_objects"
+
+
+def test_add_objects_to_images_in_campaign_with_user_key(client, app, db, mocker):
+    headers = get_headers()  # TODO: Change this to campaign keys
+
+    # TODO: add some campaigns and images to DB and set IDs below
+
+    json_payload = [
+        {
+            'image_id': 1,
+            'objects': [
+                {
+                    'bounding_box': {
+                        'xmin': 123, 'xmax': 256, 'ymin': 187, 'ymax': 231
+                    },
+                    'label': "PET"
+                },
+                {
+                    'bounding_box': {
+                        'xmin': 234, 'xmax': 324, 'ymin': 564, 'ymax': 765
+                    },
+                    'label': "Organic"
+                }
+            ]
+        }
+    ]
+
+    response = client.put("/api/v1/campaigns/1/objects", json=json_payload, headers=headers)
+    assert response.status_code == 200
+    assert response.json == "Not Implemented: campaigns.add_objects"
+
+
+def test_add_objects_to_images_in_campaign_with_translations(client, app, db, mocker):
+    headers = get_headers()  # TODO: Change this to campaign keys
+
+    # TODO: add some campaigns and images to DB and set IDs below
+
+    json_payload = [
+        {
+            'image_id': 1,
+            'objects': [
+                {
+                    'bounding_box': {
+                        'xmin': 123, 'xmax': 256, 'ymin': 187, 'ymax': 231
+                    },
+                    'label': "PET",
+                    'label_translated': 'Plastic'
+                },
+                {
+                    'bounding_box': {
+                        'xmin': 234, 'xmax': 324, 'ymin': 564, 'ymax': 765
+                    },
+                    'label': "Treetrunk",
+                    'label_translated': "Organic"
+                }
+            ]
+        }
+    ]
+
+    response = client.put("/api/v1/campaigns/1/objects", json=json_payload, headers=headers)
+    assert response.status_code == 200
+    assert response.json == "Not Implemented: campaigns.add_objects"
+
+
+def test_add_objects_to_images_in_campaign_with_confidence(client, app, db, mocker):
+    headers = get_headers()  # TODO: Change this to campaign keys
+
+    # TODO: add some campaigns and images to DB and set IDs below
+
+    json_payload = [
+        {
+            'image_id': 1,
+            'objects': [
+                {
+                    'bounding_box': {
+                        'xmin': 123, 'xmax': 256, 'ymin': 187, 'ymax': 231
+                    },
+                    'label': "PET",
+                    'confidence': 0.56
+                },
+                {
+                    'bounding_box': {
+                        'xmin': 234, 'xmax': 324, 'ymin': 564, 'ymax': 765
+                    },
+                    'label': "Treetrunk",
+                    'confidence': 0.87
+                }
+            ]
+        }
+    ]
+
+    response = client.put("/api/v1/campaigns/1/objects", json=json_payload, headers=headers)
+    assert response.status_code == 200
+    assert response.json == "Not Implemented: campaigns.add_objects"
