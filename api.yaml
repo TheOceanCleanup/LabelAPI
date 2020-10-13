@@ -537,9 +537,7 @@ paths:
         content:
           application/json:
             schema:
-              type: array
-              items:
-                $ref: "#/components/schemas/NewImageObjectList"
+              $ref: "#/components/schemas/NewImageObjectList"
       responses:
         "200":
           description: Successfully added the labels to the system
