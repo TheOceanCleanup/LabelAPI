@@ -268,46 +268,158 @@ def test_list_images_in_set_pagination(client, app, db, mocker):
 def test_add_images_to_set_by_id(client, app, db, mocker):
     headers = get_headers(db)
 
-    # TODO: add some image sets and images to DB and set IDs below
+    now = datetime.datetime.now()
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
+
+    # Remove the set from img3 to test multiple adds
+    img3.imageset = None
+    img3.imageset_id = None
+    db.session.add(img3)
+    db.session.commit()
 
     json_payload = [
         {'id': 1},
-        {'id': 2},
-        {'id': 5}
+        {'id': 3}
     ]
 
-    response = client.post("/api/v1/image_sets/1/images", json=json_payload, headers=headers)
+    response = client.post("/api/v1/image_sets/2/images", json=json_payload, headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: image_sets.add_images"
+    assert response.json == "ok"
+
+    assert img1 in imgset2.images
+    assert img3 in imgset2.images
+    assert img2 not in imgset2.images
 
 
 def test_add_images_to_set_by_blobstorage_path(client, app, db, mocker):
     headers = get_headers(db)
 
-    # TODO: add some image sets and images to DB and set IDs below
+    now = datetime.datetime.now()
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
+
+    # Remove the set from img3 to test multiple adds
+    img3.imageset = None
+    img3.imageset_id = None
+    db.session.add(img3)
+    db.session.commit()
 
     json_payload = [
-        {'filepath': '/'},
-        {'filepath': '/'},
-        {'filepath': '/'}
+        {'filepath': '/some/path/file1.png'},
+        {'filepath': '/some/otherpath/file3.png'}
     ]
 
-    response = client.post("/api/v1/image_sets/1/images", json=json_payload, headers=headers)
+    response = client.post("/api/v1/image_sets/2/images", json=json_payload, headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: image_sets.add_images"
+    assert response.json == "ok"
+
+    assert img1 in imgset2.images
+    assert img3 in imgset2.images
+    assert img2 not in imgset2.images
 
 
 def test_add_images_to_set_mixed(client, app, db, mocker):
     headers = get_headers(db)
 
-    # TODO: add some image sets and images to DB and set IDs below
+    now = datetime.datetime.now()
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
+
+    # Remove the set from img3 to test multiple adds
+    img3.imageset = None
+    img3.imageset_id = None
+    db.session.add(img3)
+    db.session.commit()
 
     json_payload = [
-        {'filepath': '/'},
-        {'id': 3},
-        {'filepath': '/'}
+        {'filepath': '/some/path/file1.png'},
+        {'id': 3}
     ]
 
-    response = client.post("/api/v1/image_sets/1/images", json=json_payload, headers=headers)
+    response = client.post("/api/v1/image_sets/2/images", json=json_payload, headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: image_sets.add_images"
+    assert response.json == "ok"
+
+    assert img1 in imgset2.images
+    assert img3 in imgset2.images
+    assert img2 not in imgset2.images
+
+
+def test_add_images_to_set_doesnt_exist(client, app, db, mocker):
+    headers = get_headers(db)
+
+    now = datetime.datetime.now()
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
+
+    # Remove the set from img3 to test
+    img3.imageset = None
+    img3.imageset_id = None
+    db.session.add(img3)
+    db.session.commit()
+
+    json_payload = [
+        {'id': 3},
+        {'id': 10}
+    ]
+
+    response = client.post("/api/v1/image_sets/2/images", json=json_payload, headers=headers)
+    assert response.status_code == 404
+    assert response.json['detail'] == "Unknown image provided"
+
+    # Verify that no images where added at all
+    assert len(imgset2.images) == 0
+
+
+def test_add_images_to_set_invalid_state(client, app, db, mocker):
+    headers = get_headers(db)
+
+    now = datetime.datetime.now()
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
+
+    # Remove the set from img3 to test
+    img3.imageset = None
+    img3.imageset_id = None
+    db.session.add(img3)
+    db.session.commit()
+
+    json_payload = [
+        {'id': 1},
+        {'id': 3}
+    ]
+
+    # Note image_set 3 - this has status finished
+    response = client.post("/api/v1/image_sets/3/images", json=json_payload, headers=headers)
+    assert response.status_code == 409
+    assert response.json['detail'] == 'Not allowed to add images while status is "finished"'
+
+    # Verify that no images where added at all
+    assert len(imgset3.images) == 0
+
+
+def test_add_images_to_set_already_attached(client, app, db, mocker):
+    headers = get_headers(db)
+
+    now = datetime.datetime.now()
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
+
+    json_payload = [
+        {'id': 1},
+        {'id': 3}
+    ]
+
+    response = client.post("/api/v1/image_sets/2/images", json=json_payload, headers=headers)
+    assert response.status_code == 409
+    assert response.json['detail'] == "Image 3 (/some/otherpath/file3.png) is already assigned to an image set"
+
+    # Verify that no images where added at all
+    assert len(imgset3.images) == 0

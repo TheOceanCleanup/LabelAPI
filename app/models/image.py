@@ -116,8 +116,65 @@ class ImageSet(db.Model):
     }
 
     def change_status(self, desired_status):
+        """
+        Change the status of the current set. Check if this is a valid
+        transition first.
+
+        :param desired_status:  The status to go to
+        :returns boolean:       Success or not
+        """
         if desired_status not in self.allowed_status_transitions[self.status]:
             return False
 
         self.status = desired_status
         return True
+
+    def add_images(self, images):
+        """
+        Add images to this set. Images could be provided by ID or by
+        blobstorage path. Only allow adding images if current status of the
+        image set is "created".
+
+        :params images:     List of images to add. Provided as objects, either
+                            with 'id' or as 'filepath' as sole property.
+        :returns boolean:   Success or not
+        :returns int:       Status code in case of failure - 404 if image does
+                            not exist, 400 if invalid request or 409 if status
+                            of imageset != created or the image is already
+                            attached to another set
+        :returns string:    Error message in case of failure
+        """
+        if self.status != 'created':
+            return False, 409, \
+                f'Not allowed to add images while status is "{self.status}"'
+
+        for i in images:
+            # Find image.
+            # NOTE: Connexion has already validated for us that either id or
+            #       filepath exists, hence the simple else statement
+            if 'id' in i:
+                image = Image.query.get(i['id'])
+            else:
+                image = Image.query\
+                        .filter(Image.blobstorage_path == i['filepath'])\
+                        .first()
+
+            # Check if image exists
+            if image is None:
+                db.session.rollback()
+                return False, 404, "Unknown image provided"
+
+            # Check if image is not yet assigned to another imageset
+            if image.imageset is not None:
+                db.session.rollback()
+                return False, 409, \
+                    f"Image {image.id} ({image.blobstorage_path}) is already " \
+                    "assigned to an image set"
+
+            # All good, update image. Note that this is not commited yet,
+            # allowing a rollback in case on of the other images can't be added.
+            image.imageset = self
+
+        # Now that everything is done with no errors, we can commit.
+        db.session.commit()
+        return True, None, None

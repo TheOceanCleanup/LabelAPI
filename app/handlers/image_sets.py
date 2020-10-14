@@ -98,6 +98,20 @@ def add_images(imageset_id, body):
 
     Add images to an image set.
 
-    Note: Can only add to created set
+    Note: Can only add to "created" status set
     """
+    # Check if logged in user has correct permissions
+    if not flask_login.current_user.is_image_admin():
+        abort(401)
+
+    imageset = ImageSet.query.get(imageset_id)
+    if imageset is None:
+        abort(404)
+
+    success, sc, msg = imageset.add_images(body)
+    if success:
+        return "ok"
+    else:
+        abort(sc, msg)
+
     return "Not Implemented: image_sets.add_images"
