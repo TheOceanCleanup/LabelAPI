@@ -27,7 +27,7 @@ class Image(db.Model):
     )
     campaign_images = db.relationship(
         "CampaignImage",
-        back_populates="images"
+        back_populates="image"
     )
 
     def __repr__(self):
@@ -81,7 +81,7 @@ class ImageSet(db.Model):
 
     created_by = db.relationship(
         "User",
-        back_populates="campaigns",
+        back_populates="imagesets",
         foreign_keys=created_by_id
     )
     images = db.relationship(

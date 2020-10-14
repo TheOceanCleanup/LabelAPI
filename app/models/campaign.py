@@ -77,6 +77,10 @@ class CampaignImage(db.Model):
         back_populates="campaign_images",
         foreign_keys=image_id
     )
+    objects = db.relationship(
+        "Object",
+        back_populates="campaign_image"
+    )
 
     def __repr__(self):
         return '<CampaignImage %r-%r>' % (self.campaign, self.image)

@@ -1,5 +1,6 @@
 from common.db import db
 from sqlalchemy.dialects.postgresql import BYTEA
+import bcrypt
 
 
 class User(db.Model):
@@ -11,13 +12,13 @@ class User(db.Model):
 
     campaigns = db.relationship("Campaign", back_populates="created_by")
     imagesets = db.relationship("ImageSet", back_populates="created_by")
-    roles = db.relationship("Campaign", back_populates="user")
+    roles = db.relationship("Role", back_populates="user")
 
     def __repr__(self):
         return '<User %r>' % self.email
 
-    def check_password(self):
-        return True
+    def check_password(self, password):
+        return bcrypt.checkpw(api_secret.encode(), self.API_SECRET)
 
 
 class Role(db.Model):
