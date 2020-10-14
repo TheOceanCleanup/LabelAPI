@@ -1,4 +1,5 @@
 from models.user import User, Role
+from models.image import Image, ImageSet
 import bcrypt
 
 
@@ -27,3 +28,86 @@ def get_headers(db):
     }
 
     return headers
+
+
+def add_user(db):
+    user = User(email="someone@example.com", API_KEY="", API_SECRET="".encode())
+    db.session.add(user)
+    db.session.commit()
+    return user
+
+
+def add_imagesets(db, user, now):
+    imgset1 = ImageSet(
+        id=1,
+        title="some image set",
+        status="created",
+        blobstorage_path="/some/otherpath",
+        date_created=now,
+        created_by=user
+    )
+    imgset2 = ImageSet(
+        id=2,
+        title="some other image set",
+        status="created",
+        blobstorage_path="/some/path",
+        date_created=now,
+        created_by=user
+    )
+    imgset3 = ImageSet(
+        id=3,
+        title="A third set",
+        status="finished",
+        meta_data={
+            'note': 'Special Drone footage'
+        },
+        blobstorage_path="/some/thirdpath",
+        date_created=now,
+        date_finished=now,
+        created_by=user
+    )
+    db.session.add(imgset1)
+    db.session.add(imgset2)
+    db.session.add(imgset3)
+    db.session.commit()
+    return imgset1, imgset2, imgset3
+
+
+def add_images(db, imgset, now):
+    img1 = Image(
+        id=1,
+        blobstorage_path="/some/path/file1.png",
+        type="drone",
+        meta_data={'source': 'video1.mp4', 'frame': 1337},
+        date_added=now
+    )
+    img2 = Image(
+        id=2,
+        blobstorage_path="/some/otherpath/file2.png",
+        imageset=imgset,
+        type="bridge",
+        location_taken="Dominican Republic - Bridge A",
+        filetype="JPEG",
+        filesize=123456,
+        width=1920,
+        height=1080,
+        date_taken=now,
+        date_added=now
+    )
+    img3 = Image(
+        id=3,
+        blobstorage_path="/some/otherpath/file3.png",
+        imageset=imgset,
+        type="bridge",
+        location_taken="Dominican Republic - Bridge A",
+        filetype="JPEG",
+        filesize=123321,
+        width=1920,
+        height=1080,
+        date_taken=now,
+        date_added=now
+    )
+    db.session.add(img1)
+    db.session.add(img2)
+    db.session.add(img3)
+    return img1, img2, img3

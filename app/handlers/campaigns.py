@@ -68,6 +68,8 @@ def add_images(campaign_id, body):
     POST /campaigns/{campaign_id}/images
 
     Add images to a campaign
+
+    Note: Can only add to active set
     """
     return "Not Implemented: campaigns.add_images"
 
@@ -78,5 +80,7 @@ def add_objects(campaign_id, body):
     PUT /campaigns/{campaign_id}/objects
 
     Handle the delivery of new labeled objects for a campaign.
+
+    Note: Can only add to active set
     """
     return "Not Implemented: campaigns.add_objects"

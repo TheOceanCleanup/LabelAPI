@@ -1,75 +1,17 @@
 import pytest
 from flask import g, session
 import os
-import json
 import datetime
-from tests.shared import get_headers
-from models.image import Image, ImageSet
-from models.user import User
+from tests.shared import get_headers, add_user, add_imagesets, add_images
 
-
-def add_user(db):
-    user = User(email="someone@example.com", API_KEY="", API_SECRET="".encode())
-    db.session.add(user)
-    db.session.commit()
-    return user
-
-
-def add_some_images(db, user):
-    now = datetime.datetime.now()
-    
-    imgset = ImageSet(
-        id=1,
-        title="some image set",
-        status="created",
-        blobstorage_path="/some/otherpath",
-        date_created=now,
-        created_by=user
-    )
-    db.session.add(imgset)
-    img1 = Image(
-        id=1,
-        blobstorage_path="/some/path/file1.png",
-        type="drone",
-        meta_data={'source': 'video1.mp4', 'frame': 1337},
-        date_added=now
-    )
-    img2 = Image(
-        id=2,
-        blobstorage_path="/some/otherpath/file2.png",
-        imageset=imgset,
-        type="bridge",
-        location_taken="Dominican Republic - Bridge A",
-        filetype="JPEG",
-        filesize=123456,
-        width=1920,
-        height=1080,
-        date_taken=now,
-        date_added=now
-    )
-    img3 = Image(
-        id=3,
-        blobstorage_path="/some/otherpath/file3.png",
-        imageset=imgset,
-        type="bridge",
-        location_taken="Dominican Republic - Bridge A",
-        filetype="JPEG",
-        filesize=123321,
-        width=1920,
-        height=1080,
-        date_taken=now,
-        date_added=now
-    )
-    db.session.add(img1)
-    db.session.add(img2)
-    db.session.add(img3)
-    return now
 
 def test_list_images(client, app, db, mocker):
     headers = get_headers(db)
 
+    now = datetime.datetime.now()
     user = add_user(db)
-    now = add_some_images(db, user)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
 
     response = client.get("/api/v1/images", headers=headers)
 
@@ -156,8 +98,10 @@ def test_list_images(client, app, db, mocker):
 def test_list_images_pagination(client, app, db, mocker):
     headers = get_headers(db)
 
+    now = datetime.datetime.now()
     user = add_user(db)
-    now = add_some_images(db, user)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
 
     response = client.get("/api/v1/images", headers=headers)
 
