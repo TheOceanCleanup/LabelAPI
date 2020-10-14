@@ -77,7 +77,7 @@ class ImageSet(db.Model):
                              server_default=db.func.now())
     date_finished = db.Column(db.DateTime, nullable=True)
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'),
-                              nullable=False)
+                              name="created_by", nullable=False)
 
     created_by = db.relationship(
         "User",

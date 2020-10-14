@@ -20,7 +20,7 @@ class Campaign(db.Model):
     date_completed = db.Column(db.DateTime, nullable=True)
     date_finished = db.Column(db.DateTime, nullable=True)
     created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'),
-                              nullable=False)
+                              name="created_by", nullable=False)
 
     created_by = db.relationship(
         "User",
@@ -30,6 +30,10 @@ class Campaign(db.Model):
     campaign_images = db.relationship(
         "CampaignImage",
         back_populates="campaign"
+    )
+    attached_roles = db.relationship(
+        "Role",
+        back_populates="subject"
     )
 
     def __repr__(self):
