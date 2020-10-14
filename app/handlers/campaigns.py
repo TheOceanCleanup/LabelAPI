@@ -1,3 +1,7 @@
+from common.auth import flask_login
+
+
+@flask_login.login_required
 def list_campaigns(page=1, per_page=10):
     """
     GET /campaigns
@@ -7,6 +11,7 @@ def list_campaigns(page=1, per_page=10):
     return "Not Implemented: campaigns.list_campaigns"
 
 
+@flask_login.login_required
 def get_metadata(campaign_id):
     """
     GET /campaigns/{campaign_id}
@@ -16,6 +21,7 @@ def get_metadata(campaign_id):
     return "Not Implemented: campaigns.get_metadata"
 
 
+@flask_login.login_required
 def change_status(campaign_id, body):
     """
     PUT /campaigns/{campaign_id}
@@ -25,6 +31,7 @@ def change_status(campaign_id, body):
     return "Not Implemented: campaigns.change_status"
 
 
+@flask_login.login_required
 def get_objects(campaign_id):
     """
     GET /campaigns/{campaign_id}/objects
@@ -35,6 +42,7 @@ def get_objects(campaign_id):
     return "Not Implemented: campaigns.get_objects"
 
 
+@flask_login.login_required
 def get_images(campaign_id, page=1, per_page=1000):
     """
     GET /campaigns/{campaign_id}/images
@@ -44,6 +52,7 @@ def get_images(campaign_id, page=1, per_page=1000):
     return "Not Implemented: campaigns.get_images"
 
 
+@flask_login.login_required
 def add_campaign(body):
     """
     POST /campaigns
@@ -53,6 +62,7 @@ def add_campaign(body):
     return "Not Implemented: campaigns.add_campaign"
 
 
+@flask_login.login_required
 def add_images(campaign_id, body):
     """
     POST /campaigns/{campaign_id}/images
@@ -62,6 +72,7 @@ def add_images(campaign_id, body):
     return "Not Implemented: campaigns.add_images"
 
 
+@flask_login.login_required
 def add_objects(campaign_id, body):
     """
     PUT /campaigns/{campaign_id}/objects

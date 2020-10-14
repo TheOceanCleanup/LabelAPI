@@ -5,6 +5,7 @@ from models.image import Image, ImageSet
 from models.object import Object
 from models.user import User
 from common.db import db
+from common.auth import login_manager
 import os
 
 
@@ -23,10 +24,16 @@ class App:
             os.environ.get('DB_CONNECTION_STRING')
 
         app.app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        app.app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
+            "pool_recycle": 60,
+            "pool_size": 10
+        }
         db.init_app(app.app)
 
         migrate = Migrate()
         migrate.init_app(app.app, db)
+
+        login_manager.init_app(app.app)
 
         app.add_api('api.yaml',
                     strict_validation=True)

@@ -1,3 +1,7 @@
+from common.auth import flask_login
+
+
+@flask_login.login_required
 def list_imagesets(page=1, per_page=10):
     """
     GET /image_sets
@@ -7,6 +11,7 @@ def list_imagesets(page=1, per_page=10):
     return "Not Implemented: image_sets.list_imagesets"
 
 
+@flask_login.login_required
 def add_imageset(body):
     """
     POST /images_sets
@@ -16,6 +21,7 @@ def add_imageset(body):
     return "Not Implemented: image_sets.add_imageset"
 
 
+@flask_login.login_required
 def change_status(imageset_id, body):
     """
     PUT /image_sets/{imageset_id}
@@ -25,6 +31,7 @@ def change_status(imageset_id, body):
     return "Not Implemented: image_sets.change_status"
 
 
+@flask_login.login_required
 def get_images(imageset_id):
     """
     GET /image_sets/{imageset_id}/images
@@ -34,6 +41,7 @@ def get_images(imageset_id):
     return "Not Implemented: image_sets.get_images"
 
 
+@flask_login.login_required
 def add_images(imageset_id, body):
     """
     POST /image_sets/{imageset_id}/images
