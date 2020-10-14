@@ -5,7 +5,7 @@ from tests.shared import get_headers
 
 
 def test_list_campaigns(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add some campaigns to DB
 
@@ -15,7 +15,7 @@ def test_list_campaigns(client, app, db, mocker):
 
 
 def test_list_campaigns_pagination(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add some campaigns to DB
 
@@ -25,7 +25,7 @@ def test_list_campaigns_pagination(client, app, db, mocker):
 
 
 def test_new_campaign(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     json_payload = {
         'title': 'Some test set',
@@ -47,7 +47,7 @@ def test_new_campaign(client, app, db, mocker):
 
 
 def test_get_campaign_metadata(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add some campaign to DB and set ID in url below
 
@@ -57,7 +57,7 @@ def test_get_campaign_metadata(client, app, db, mocker):
 
 
 def test_change_campaign_status(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add some campaign to DB and set ID in url below
 
@@ -71,7 +71,7 @@ def test_change_campaign_status(client, app, db, mocker):
 
 
 def test_add_images_to_campaign_by_id(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add some campaigns and images to DB and set IDs below
 
@@ -87,7 +87,7 @@ def test_add_images_to_campaign_by_id(client, app, db, mocker):
 
 
 def test_add_images_to_campaign_by_blobstorage_path(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add some campaigns and images to DB and set IDs below
 
@@ -103,7 +103,7 @@ def test_add_images_to_campaign_by_blobstorage_path(client, app, db, mocker):
 
 
 def test_add_images_to_campaign_mixed(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add some campaigns and images to DB and set IDs below
 
@@ -119,7 +119,7 @@ def test_add_images_to_campaign_mixed(client, app, db, mocker):
 
 
 def test_get_objects_in_campaign(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add some campaigns, images and objects to DB
     response = client.get("/api/v1/campaigns/1/objects", headers=headers)
@@ -128,7 +128,7 @@ def test_get_objects_in_campaign(client, app, db, mocker):
 
 
 def test_get_images_in_campaign_with_campaign_key(client, app, db, mocker):
-    headers = get_headers()  # TODO: Change this to campaign keys
+    headers = get_headers(db)  # TODO: Change this to campaign keys
 
     # TODO: add images, campaigns to DB
 
@@ -138,7 +138,7 @@ def test_get_images_in_campaign_with_campaign_key(client, app, db, mocker):
 
 
 def test_images_in_campaign_with_user_key(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add images, campaigns to DB
 
@@ -148,7 +148,7 @@ def test_images_in_campaign_with_user_key(client, app, db, mocker):
 
 
 def test_add_objects_to_images_in_campaign_with_campaign_key(client, app, db, mocker):
-    headers = get_headers()  # TODO: Change this to campaign keys
+    headers = get_headers(db)  # TODO: Change this to campaign keys
 
     # TODO: add some campaigns and images to DB and set IDs below
 
@@ -195,7 +195,7 @@ def test_add_objects_to_images_in_campaign_with_campaign_key(client, app, db, mo
 
 
 def test_add_objects_to_images_in_campaign_with_user_key(client, app, db, mocker):
-    headers = get_headers()  # TODO: Change this to campaign keys
+    headers = get_headers(db)  # TODO: Change this to campaign keys
 
     # TODO: add some campaigns and images to DB and set IDs below
 
@@ -225,7 +225,7 @@ def test_add_objects_to_images_in_campaign_with_user_key(client, app, db, mocker
 
 
 def test_add_objects_to_images_in_campaign_with_translations(client, app, db, mocker):
-    headers = get_headers()  # TODO: Change this to campaign keys
+    headers = get_headers(db)
 
     # TODO: add some campaigns and images to DB and set IDs below
 
@@ -257,7 +257,7 @@ def test_add_objects_to_images_in_campaign_with_translations(client, app, db, mo
 
 
 def test_add_objects_to_images_in_campaign_with_confidence(client, app, db, mocker):
-    headers = get_headers()  # TODO: Change this to campaign keys
+    headers = get_headers(db)
 
     # TODO: add some campaigns and images to DB and set IDs below
 

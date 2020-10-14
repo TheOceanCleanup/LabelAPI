@@ -5,7 +5,7 @@ from tests.shared import get_headers
 
 
 def test_list_images(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add some images to DB
 
@@ -15,7 +15,7 @@ def test_list_images(client, app, db, mocker):
 
 
 def test_list_images_pagination(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add some images to DB
 
@@ -25,7 +25,7 @@ def test_list_images_pagination(client, app, db, mocker):
 
 
 def test_list_objects_in_image_simple(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add images, campaigns, objects to DB
 
@@ -35,7 +35,7 @@ def test_list_objects_in_image_simple(client, app, db, mocker):
 
 
 def test_list_objects_in_image_prioritize_default(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add images, campaigns, objects to DB. Use multiple campaigns with
     #       prioritization
@@ -46,7 +46,7 @@ def test_list_objects_in_image_prioritize_default(client, app, db, mocker):
 
 
 def test_list_objects_in_image_prioritize_provided(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add images, campaigns, objects to DB. Use multiple campaigns with
     #       prioritization
@@ -57,7 +57,7 @@ def test_list_objects_in_image_prioritize_provided(client, app, db, mocker):
 
 
 def test_images_get_link_with_campaign_key(client, app, db, mocker):
-    headers = get_headers()  # TODO: Change this to campaign keys
+    headers = get_headers(db)  # TODO: Change this to campaign keys
 
     # TODO: add images, campaigns to DB
 
@@ -67,7 +67,7 @@ def test_images_get_link_with_campaign_key(client, app, db, mocker):
 
 
 def test_images_get_link_with_user_key(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add images, campaigns to DB
 

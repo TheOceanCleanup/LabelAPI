@@ -1,9 +1,8 @@
 from models.user import User
-from common.db import db
 import bcrypt
 
 
-def get_headers():
+def get_headers(db):
     api_key = "123"
     api_secret = "foobar"
     hashed = bcrypt.hashpw(api_secret.encode(), bcrypt.gensalt())

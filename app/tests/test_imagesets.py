@@ -5,7 +5,7 @@ from tests.shared import get_headers
 
 
 def test_list_imagesets(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add some image sets to DB
 
@@ -15,7 +15,7 @@ def test_list_imagesets(client, app, db, mocker):
 
 
 def test_list_imagesets_pagination(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add some image sets to DB
 
@@ -25,7 +25,7 @@ def test_list_imagesets_pagination(client, app, db, mocker):
 
 
 def test_new_imageset(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
     json_payload = {
         'title': 'Some test set',
         'metadata': {
@@ -42,7 +42,7 @@ def test_new_imageset(client, app, db, mocker):
 
 
 def test_change_imageset_status(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add some image set to DB and set ID in url below
 
@@ -56,8 +56,7 @@ def test_change_imageset_status(client, app, db, mocker):
 
 
 def test_list_images_in_set(client, app, db, mocker):
-
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add some image set and images to DB and set ID in url below
 
@@ -67,7 +66,7 @@ def test_list_images_in_set(client, app, db, mocker):
 
 
 def test_list_images_in_set_pagination(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add some image set and images to DB and set ID in url below
 
@@ -77,7 +76,7 @@ def test_list_images_in_set_pagination(client, app, db, mocker):
 
 
 def test_add_images_to_set_by_id(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add some image sets and images to DB and set IDs below
 
@@ -93,7 +92,7 @@ def test_add_images_to_set_by_id(client, app, db, mocker):
 
 
 def test_add_images_to_set_by_blobstorage_path(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add some image sets and images to DB and set IDs below
 
@@ -109,7 +108,7 @@ def test_add_images_to_set_by_blobstorage_path(client, app, db, mocker):
 
 
 def test_add_images_to_set_mixed(client, app, db, mocker):
-    headers = get_headers()
+    headers = get_headers(db)
 
     # TODO: add some image sets and images to DB and set IDs below
 
