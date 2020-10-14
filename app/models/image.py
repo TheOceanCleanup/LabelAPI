@@ -109,3 +109,15 @@ class ImageSet(db.Model):
             .filter(Image.imageset==self)\
             .order_by(Image.id)\
             .paginate(page=page, per_page=per_page)
+
+    allowed_status_transitions = {
+        'created': ['finished'],
+        'finished': []
+    }
+
+    def change_status(self, desired_status):
+        if desired_status not in self.allowed_status_transitions[self.status]:
+            return False
+
+        self.status = desired_status
+        return True

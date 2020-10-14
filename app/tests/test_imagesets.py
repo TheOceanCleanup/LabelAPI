@@ -121,7 +121,9 @@ def test_new_imageset(client, app, db, mocker):
 def test_change_imageset_status(client, app, db, mocker):
     headers = get_headers(db)
 
-    # TODO: add some image set to DB and set ID in url below
+    now = datetime.datetime.now()
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
 
     json_payload = {
         'new_status': 'finished'
@@ -129,7 +131,23 @@ def test_change_imageset_status(client, app, db, mocker):
 
     response = client.put("/api/v1/image_sets/1", json=json_payload, headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: image_sets.change_status"
+    assert response.json == "ok"
+
+
+def test_change_imageset_status_invalid(client, app, db, mocker):
+    headers = get_headers(db)
+
+    now = datetime.datetime.now()
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+
+    json_payload = {
+        'new_status': 'finished'
+    }
+
+    response = client.put("/api/v1/image_sets/3", json=json_payload, headers=headers)
+    assert response.status_code == 409
+    assert response.json['detail'] == 'Not allowed to go from "finished" to "finished"'
 
 
 def test_list_images_in_set(client, app, db, mocker):

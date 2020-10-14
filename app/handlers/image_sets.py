@@ -45,7 +45,21 @@ def change_status(imageset_id, body):
 
     Change the status of an image set
     """
-    return "Not Implemented: image_sets.change_status"
+    # Check if logged in user has correct permissions
+    if not flask_login.current_user.is_image_admin():
+        abort(401)
+
+    imageset = ImageSet.query.get(imageset_id)
+    if imageset is None:
+        abort(404)
+
+    if imageset.change_status(body['new_status']):
+        return "ok"
+    else:
+        abort(
+            409,
+            f'Not allowed to go from "{imageset.status}" to "{body["new_status"]}"'
+        )
 
 
 @flask_login.login_required
@@ -59,9 +73,7 @@ def get_images(imageset_id, page=1, per_page=10):
     if not flask_login.current_user.is_image_admin():
         abort(401)
 
-    print(imageset_id)
     imageset = ImageSet.query.get(imageset_id)
-    print(imageset)
     if imageset is None:
         abort(404)
 
