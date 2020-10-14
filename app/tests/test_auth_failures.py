@@ -1,6 +1,3 @@
-import pytest
-from flask import g, session
-import os
 from tests.shared import get_headers
 
 

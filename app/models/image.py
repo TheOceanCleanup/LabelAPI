@@ -106,7 +106,7 @@ class ImageSet(db.Model):
 
     def get_images_paginated(self, page=1, per_page=10):
         return Image.query\
-            .filter(Image.imageset==self)\
+            .filter(Image.imageset == self)\
             .order_by(Image.id)\
             .paginate(page=page, per_page=per_page)
 
@@ -168,11 +168,11 @@ class ImageSet(db.Model):
             if image.imageset is not None:
                 db.session.rollback()
                 return False, 409, \
-                    f"Image {image.id} ({image.blobstorage_path}) is already " \
-                    "assigned to an image set"
+                    f"Image {image.id} ({image.blobstorage_path}) is " \
+                    "already assigned to an image set"
 
             # All good, update image. Note that this is not commited yet,
-            # allowing a rollback in case on of the other images can't be added.
+            # allowing a rollback in case on of the other images can't be added
             image.imageset = self
 
         # Now that everything is done with no errors, we can commit.

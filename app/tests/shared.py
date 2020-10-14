@@ -31,7 +31,11 @@ def get_headers(db):
 
 
 def add_user(db):
-    user = User(email="someone@example.com", API_KEY="", API_SECRET="".encode())
+    user = User(
+        email="someone@example.com",
+        API_KEY="",
+        API_SECRET="".encode()
+    )
     db.session.add(user)
     db.session.commit()
     return user

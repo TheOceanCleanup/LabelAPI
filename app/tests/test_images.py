@@ -1,6 +1,3 @@
-import pytest
-from flask import g, session
-import os
 import datetime
 from tests.shared import get_headers, add_user, add_imagesets, add_images
 
@@ -172,7 +169,8 @@ def test_list_objects_in_image_prioritize_provided(client, app, db, mocker):
     # TODO: add images, campaigns, objects to DB. Use multiple campaigns with
     #       prioritization
 
-    response = client.get("/api/v1/images/1/objects?campaigns=2,3,1", headers=headers)
+    response = client.get(
+        "/api/v1/images/1/objects?campaigns=2,3,1", headers=headers)
     assert response.status_code == 200
     assert response.json == "Not Implemented: images.get_objects"
 

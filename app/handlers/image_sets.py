@@ -14,7 +14,8 @@ def list_imagesets(page=1, per_page=10):
     if not flask_login.current_user.is_image_admin():
         abort(401)
 
-    imagesets = ImageSet.query.order_by(ImageSet.id).paginate(page=page, per_page=per_page)
+    imagesets = ImageSet.query\
+                .order_by(ImageSet.id).paginate(page=page, per_page=per_page)
     return {
         'pagination': {
             'page': imagesets.page,
@@ -58,7 +59,8 @@ def change_status(imageset_id, body):
     else:
         abort(
             409,
-            f'Not allowed to go from "{imageset.status}" to "{body["new_status"]}"'
+            f'Not allowed to go from "{imageset.status}" to ' \
+            f'"{body["new_status"]}"'
         )
 
 

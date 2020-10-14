@@ -1,6 +1,3 @@
-import pytest
-from flask import g, session
-import os
 from tests.shared import get_headers
 
 
@@ -19,7 +16,8 @@ def test_list_campaigns_pagination(client, app, db, mocker):
 
     # TODO: add some campaigns to DB
 
-    response = client.get("/api/v1/campaigns?page=2&per_page=2", headers=headers)
+    response = client.get(
+        "/api/v1/campaigns?page=2&per_page=2", headers=headers)
     assert response.status_code == 200
     assert response.json == "Not Implemented: campaigns.list_campaigns"
 
@@ -41,7 +39,8 @@ def test_new_campaign(client, app, db, mocker):
             'original_label': 'translated_label'
         }
     }
-    response = client.post("/api/v1/campaigns", json=json_payload, headers=headers)
+    response = client.post(
+        "/api/v1/campaigns", json=json_payload, headers=headers)
     assert response.status_code == 200
     assert response.json == "Not Implemented: campaigns.add_campaign"
 
@@ -65,7 +64,8 @@ def test_change_campaign_status(client, app, db, mocker):
         'new_status': 'active'
     }
 
-    response = client.put("/api/v1/campaigns/1", json=json_payload, headers=headers)
+    response = client.put(
+        "/api/v1/campaigns/1", json=json_payload, headers=headers)
     assert response.status_code == 200
     assert response.json == "Not Implemented: campaigns.change_status"
 
@@ -81,7 +81,8 @@ def test_add_images_to_campaign_by_id(client, app, db, mocker):
         {'id': 5}
     ]
 
-    response = client.post("/api/v1/campaigns/1/images", json=json_payload, headers=headers)
+    response = client.post(
+        "/api/v1/campaigns/1/images", json=json_payload, headers=headers)
     assert response.status_code == 200
     assert response.json == "Not Implemented: campaigns.add_images"
 
@@ -97,7 +98,8 @@ def test_add_images_to_campaign_by_blobstorage_path(client, app, db, mocker):
         {'filepath': '/'}
     ]
 
-    response = client.post("/api/v1/campaigns/1/images", json=json_payload, headers=headers)
+    response = client.post(
+        "/api/v1/campaigns/1/images", json=json_payload, headers=headers)
     assert response.status_code == 200
     assert response.json == "Not Implemented: campaigns.add_images"
 
@@ -113,7 +115,8 @@ def test_add_images_to_campaign_mixed(client, app, db, mocker):
         {'filepath': '/'}
     ]
 
-    response = client.post("/api/v1/campaigns/1/images", json=json_payload, headers=headers)
+    response = client.post(
+        "/api/v1/campaigns/1/images", json=json_payload, headers=headers)
     assert response.status_code == 200
     assert response.json == "Not Implemented: campaigns.add_images"
 
@@ -147,7 +150,8 @@ def test_images_in_campaign_with_user_key(client, app, db, mocker):
     assert response.json == "Not Implemented: campaigns.get_images"
 
 
-def test_add_objects_to_images_in_campaign_with_campaign_key(client, app, db, mocker):
+def test_add_objects_to_images_in_campaign_with_campaign_key(client, app, db,
+                                                             mocker):
     headers = get_headers(db)  # TODO: Change this to campaign keys
 
     # TODO: add some campaigns and images to DB and set IDs below
@@ -189,12 +193,14 @@ def test_add_objects_to_images_in_campaign_with_campaign_key(client, app, db, mo
         }
     ]
 
-    response = client.put("/api/v1/campaigns/1/objects", json=json_payload, headers=headers)
+    response = client.put(
+        "/api/v1/campaigns/1/objects", json=json_payload, headers=headers)
     assert response.status_code == 200
     assert response.json == "Not Implemented: campaigns.add_objects"
 
 
-def test_add_objects_to_images_in_campaign_with_user_key(client, app, db, mocker):
+def test_add_objects_to_images_in_campaign_with_user_key(client, app, db,
+                                                         mocker):
     headers = get_headers(db)  # TODO: Change this to campaign keys
 
     # TODO: add some campaigns and images to DB and set IDs below
@@ -219,12 +225,14 @@ def test_add_objects_to_images_in_campaign_with_user_key(client, app, db, mocker
         }
     ]
 
-    response = client.put("/api/v1/campaigns/1/objects", json=json_payload, headers=headers)
+    response = client.put(
+        "/api/v1/campaigns/1/objects", json=json_payload, headers=headers)
     assert response.status_code == 200
     assert response.json == "Not Implemented: campaigns.add_objects"
 
 
-def test_add_objects_to_images_in_campaign_with_translations(client, app, db, mocker):
+def test_add_objects_to_images_in_campaign_with_translations(client, app, db,
+                                                             mocker):
     headers = get_headers(db)
 
     # TODO: add some campaigns and images to DB and set IDs below
@@ -251,12 +259,14 @@ def test_add_objects_to_images_in_campaign_with_translations(client, app, db, mo
         }
     ]
 
-    response = client.put("/api/v1/campaigns/1/objects", json=json_payload, headers=headers)
+    response = client.put(
+        "/api/v1/campaigns/1/objects", json=json_payload, headers=headers)
     assert response.status_code == 200
     assert response.json == "Not Implemented: campaigns.add_objects"
 
 
-def test_add_objects_to_images_in_campaign_with_confidence(client, app, db, mocker):
+def test_add_objects_to_images_in_campaign_with_confidence(client, app, db,
+                                                           mocker):
     headers = get_headers(db)
 
     # TODO: add some campaigns and images to DB and set IDs below
@@ -283,6 +293,7 @@ def test_add_objects_to_images_in_campaign_with_confidence(client, app, db, mock
         }
     ]
 
-    response = client.put("/api/v1/campaigns/1/objects", json=json_payload, headers=headers)
+    response = client.put(
+        "/api/v1/campaigns/1/objects", json=json_payload, headers=headers)
     assert response.status_code == 200
     assert response.json == "Not Implemented: campaigns.add_objects"
