@@ -135,21 +135,116 @@ def test_change_imageset_status(client, app, db, mocker):
 def test_list_images_in_set(client, app, db, mocker):
     headers = get_headers(db)
 
-    # TODO: add some image set and images to DB and set ID in url below
+    now = datetime.datetime.now()
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
+
+    expected = {
+        "pagination": {
+            "page": 1,
+            "pages": 1,
+            "total": 2,
+            "per_page": 10,
+            "next": None,
+            "prev": None
+        },
+        "images": [
+            {
+                "image_id": 2,
+                "blobstorage_path": "/some/otherpath/file2.png",
+                "imageset": {
+                    "imageset_id": 1,
+                    "title": "some image set"
+                },
+                "date_taken": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "location_taken": "Dominican Republic - Bridge A",
+                "type": "bridge",
+                "metadata": None,
+                "tss_id": None,
+                "file": {
+                    "filetype": "JPEG",
+                    "filesize": 123456,
+                    "dimensions": {
+                        "width": 1920,
+                        "height": 1080
+                    }
+                }
+            },
+            {
+                "image_id": 3,
+                "blobstorage_path": "/some/otherpath/file3.png",
+                "imageset": {
+                    "imageset_id": 1,
+                    "title": "some image set"
+                },
+                "date_taken": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "location_taken": "Dominican Republic - Bridge A",
+                "type": "bridge",
+                "metadata": None,
+                "tss_id": None,
+                "file": {
+                    "filetype": "JPEG",
+                    "filesize": 123321,
+                    "dimensions": {
+                        "width": 1920,
+                        "height": 1080
+                    }
+                }
+            }
+        ]
+    }
 
     response = client.get("/api/v1/image_sets/1/images", headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: image_sets.get_images"
+    assert response.json == expected
 
 
 def test_list_images_in_set_pagination(client, app, db, mocker):
     headers = get_headers(db)
 
-    # TODO: add some image set and images to DB and set ID in url below
+    now = datetime.datetime.now()
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
 
-    response = client.get("/api/v1/image_sets/1/images?page=2&per_page=2", headers=headers)
+    expected = {
+        "pagination": {
+            "page": 2,
+            "pages": 2,
+            "total": 2,
+            "per_page": 1,
+            "next": None,
+            "prev": 1
+        },
+        "images": [
+            {
+                "image_id": 3,
+                "blobstorage_path": "/some/otherpath/file3.png",
+                "imageset": {
+                    "imageset_id": 1,
+                    "title": "some image set"
+                },
+                "date_taken": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "location_taken": "Dominican Republic - Bridge A",
+                "type": "bridge",
+                "metadata": None,
+                "tss_id": None,
+                "file": {
+                    "filetype": "JPEG",
+                    "filesize": 123321,
+                    "dimensions": {
+                        "width": 1920,
+                        "height": 1080
+                    }
+                }
+            }
+        ]
+    }
+
+    response = client.get("/api/v1/image_sets/1/images?page=2&per_page=1", headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: image_sets.get_images"
+    assert response.json == expected
 
 
 def test_add_images_to_set_by_id(client, app, db, mocker):

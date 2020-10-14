@@ -103,3 +103,9 @@ class ImageSet(db.Model):
             'date_finished': self.date_finished,
             'created_by': self.created_by.email
         }
+
+    def get_images_paginated(self, page=1, per_page=10):
+        return Image.query\
+            .filter(Image.imageset==self)\
+            .order_by(Image.id)\
+            .paginate(page=page, per_page=per_page)

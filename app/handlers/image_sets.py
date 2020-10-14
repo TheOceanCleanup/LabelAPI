@@ -1,5 +1,6 @@
 from common.auth import flask_login
 from models.image import ImageSet
+from flask import abort
 
 
 @flask_login.login_required
@@ -48,13 +49,34 @@ def change_status(imageset_id, body):
 
 
 @flask_login.login_required
-def get_images(imageset_id):
+def get_images(imageset_id, page=1, per_page=10):
     """
     GET /image_sets/{imageset_id}/images
 
     List all the images in the image set, as ID and download path.
     """
-    return "Not Implemented: image_sets.get_images"
+    # Check if logged in user has correct permissions
+    if not flask_login.current_user.is_image_admin():
+        abort(401)
+
+    print(imageset_id)
+    imageset = ImageSet.query.get(imageset_id)
+    print(imageset)
+    if imageset is None:
+        abort(404)
+
+    images = imageset.get_images_paginated(page, per_page)
+    return {
+        'pagination': {
+            'page': images.page,
+            'pages': images.page,
+            'total': images.total,
+            'per_page': images.per_page,
+            'prev': (images.prev_num if images.has_prev else None),
+            'next': (images.next_num if images.has_next else None)
+        },
+        'images': [x.to_dict() for x in images.items]
+    }
 
 
 @flask_login.login_required

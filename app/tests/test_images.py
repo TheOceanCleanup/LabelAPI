@@ -13,8 +13,6 @@ def test_list_images(client, app, db, mocker):
     imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
     img1, img2, img3 = add_images(db, imgset1, now)
 
-    response = client.get("/api/v1/images", headers=headers)
-
     expected = {
         "pagination": {
             "page": 1,
@@ -90,6 +88,8 @@ def test_list_images(client, app, db, mocker):
             }
         ]
     }
+
+    response = client.get("/api/v1/images", headers=headers)
 
     assert response.status_code == 200
     assert response.json == expected
