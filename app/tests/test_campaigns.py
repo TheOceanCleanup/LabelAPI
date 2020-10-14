@@ -36,6 +36,7 @@ def test_new_campaign(client, app, db, mocker):
 
     json_payload = {
         'title': 'Some test set',
+        'labeler_email': 'label@example.com',
         'metadata': {
             'field1': 'value1',
             'field2': {

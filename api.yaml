@@ -1023,6 +1023,7 @@ components:
       type: object
       required:
         - title
+        - labeler_email
       properties:
         title:
           description: Name of the image set
@@ -1030,6 +1031,12 @@ components:
           minLength: 1
           maxLength: 128
           example: DroneFootage
+        labeler_email:
+          description: Contact email address for the labeling partner for this
+            campaign. Is used to create a user in the database, or retrieve an
+            existing one
+          type: string
+          format: email
         metadata:
           description: Additional, flexibly structured, metadata.
           nullable: true
