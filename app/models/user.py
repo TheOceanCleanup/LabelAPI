@@ -21,6 +21,9 @@ class User(db.Model, flask_login.UserMixin):
     def check_password(self, api_secret):
         return bcrypt.checkpw(api_secret.encode(), self.API_SECRET)
 
+    def is_image_admin(self):
+        return any([x.role == 'image-admin' for x in self.roles])
+
 
 class Role(db.Model):
     __tablename__ = "roles"

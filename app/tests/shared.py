@@ -1,4 +1,4 @@
-from models.user import User
+from models.user import User, Role
 import bcrypt
 
 
@@ -12,11 +12,18 @@ def get_headers(db):
         API_SECRET=hashed
     )
     db.session.add(user)
+
+    role = Role(
+        role='image-admin',
+        user=user
+    )
+    db.session.add(role)
+
     db.session.commit()
-    
+
     headers = {
         'Authentication-Key': api_key,
         'Authentication-Secret': api_secret
     }
-    
+
     return headers
