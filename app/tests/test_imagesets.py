@@ -1,14 +1,7 @@
 import pytest
 from flask import g, session
 import os
-
-
-def get_headers():
-    # TODO create user when relevant
-    return {
-        'Authentication-Key': '',
-        'Authentication-Secret': ''
-    }
+from tests.shared import get_headers
 
 
 def test_list_imagesets(client, app, db, mocker):

@@ -1,9 +1,10 @@
 from common.db import db
 from sqlalchemy.dialects.postgresql import BYTEA
 import bcrypt
+import flask_login
 
 
-class User(db.Model):
+class User(db.Model, flask_login.UserMixin):
     __tablename__ = "user"
     id = db.Column(db.Integer, primary_key=True, unique=True)
     email = db.Column(db.String(128), nullable=False, unique=True)
@@ -17,7 +18,7 @@ class User(db.Model):
     def __repr__(self):
         return '<User %r>' % self.email
 
-    def check_password(self, password):
+    def check_password(self, api_secret):
         return bcrypt.checkpw(api_secret.encode(), self.API_SECRET)
 
 
