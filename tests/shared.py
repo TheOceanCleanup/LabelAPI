@@ -200,10 +200,14 @@ def add_image_to_campaign(db, image, campaign):
     db.session.commit()
     return campaign_image
 
-def add_object(db, now, campaign_image, label, label_translated, confidence, bbox):
+
+def add_object(db, now, campaign_image, label, label_translated, confidence,
+               bbox):
     obj = Object(
         campaign_image=campaign_image,
-        label_translated=label_translated if label_translated is not None else label,
+        label_translated=label_translated
+                         if label_translated is not None
+                         else label,
         label_original=label,
         confidence=confidence,
         x_min=bbox[0],

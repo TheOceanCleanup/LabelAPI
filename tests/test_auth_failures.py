@@ -1,4 +1,4 @@
-from tests.shared import get_headers, add_user
+from tests.shared import get_headers
 from models.user import User
 
 
@@ -37,7 +37,9 @@ def test_missing_api_secret(client, app, db, mocker):
 def test_inactive_user(client, app, db, mocker):
     headers = get_headers(db)
 
-    user = db.session.query(User).filter(User.email == "test@example.com").first()
+    user = db.session.query(User)\
+                     .filter(User.email == "test@example.com")\
+                     .first()
     user.enabled = False
     db.session.commit()
 

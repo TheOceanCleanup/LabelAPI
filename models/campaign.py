@@ -68,7 +68,7 @@ class Campaign(db.Model):
 
     @staticmethod
     def create(labeler_email, title, created_by, metadata=None,
-            label_translations=None):
+               label_translations=None):
         """
         Create a new campaign, adding the correct users and roles where
         applicable.

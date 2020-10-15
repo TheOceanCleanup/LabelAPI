@@ -1,6 +1,5 @@
 from common.auth import flask_login
 from models.campaign import Campaign, CampaignImage
-from models.user import User
 from flask import abort
 
 
@@ -16,7 +15,7 @@ def list_campaigns(page=1, per_page=10):
         abort(401)
 
     campaigns = Campaign.query.order_by(Campaign.id)\
-                .paginate(page=page, per_page=per_page)
+                              .paginate(page=page, per_page=per_page)
     return {
         'pagination': {
             'page': campaigns.page,
@@ -76,9 +75,9 @@ def get_objects(campaign_id, page=1, per_page=1000):
 
     # Access to campaign images through query, to allow for pagination
     c_images = CampaignImage.query\
-               .filter(CampaignImage.campaign_id == campaign.id)\
-               .order_by(CampaignImage.id)\
-               .paginate(page=page, per_page=per_page)
+                            .filter(CampaignImage.campaign_id == campaign.id)\
+                            .order_by(CampaignImage.id)\
+                            .paginate(page=page, per_page=per_page)
     return {
         'pagination': {
             'page': c_images.page,
@@ -113,8 +112,11 @@ def get_images(campaign_id, page=1, per_page=1000):
     # image-admin or labeler on the specific campaign
     if not (
             flask_login.current_user.has_role('image-admin') or
-            flask_login.current_user.has_role_on_subject('labeler', 'campaign',
-                campaign_id)):
+            flask_login.current_user.has_role_on_subject(
+                'labeler',
+                'campaign',
+                campaign_id)
+            ):
         abort(401)
 
     campaign = Campaign.query.get(campaign_id)
@@ -123,9 +125,9 @@ def get_images(campaign_id, page=1, per_page=1000):
 
     # Access to campaign images through query, to allow for pagination
     c_images = CampaignImage.query\
-               .filter(CampaignImage.campaign_id == campaign.id)\
-               .order_by(CampaignImage.id)\
-               .paginate(page=page, per_page=per_page)
+                            .filter(CampaignImage.campaign_id == campaign.id)\
+                            .order_by(CampaignImage.id)\
+                            .paginate(page=page, per_page=per_page)
     return {
         'pagination': {
             'page': c_images.page,
@@ -160,7 +162,8 @@ def add_campaign(body):
         abort(401)
 
     # Check if there's already a campaign with this title
-    if Campaign.query.filter(Campaign.title == body['title']).first() is not None:
+    if Campaign.query.filter(Campaign.title == body['title']).first() \
+            is not None:
         abort(409, "Another campaign with this name already exists")
 
     response = Campaign.create(

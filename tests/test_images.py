@@ -2,6 +2,7 @@ import datetime
 from tests.shared import get_headers, add_user, add_imagesets, add_images, \
     add_campaigns, add_image_to_campaign, add_object
 
+
 def test_list_images(client, app, db, mocker):
     headers = get_headers(db)
 
@@ -142,8 +143,8 @@ def test_list_images_pagination(client, app, db, mocker):
     assert response.json == expected
 
 
-def test_list_objects_in_image_prioritize_default_match_in_first(client, app,
-        db, mocker):
+def test_list_objects_in_image_prioritize_default_match_in_first(
+        client, app, db, mocker):
     """
     In this test case, we add objects to an image in both campaign 1 and
     campaign 2. We expect to get the return only from campaign 1, as the
@@ -159,10 +160,10 @@ def test_list_objects_in_image_prioritize_default_match_in_first(client, app,
     campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
     ci1 = add_image_to_campaign(db, img1, campaign1)
     ci2 = add_image_to_campaign(db, img1, campaign2)
-    obj1 = add_object(db, now, ci1, 'label1', None, None, [1,2,3,4])
-    obj2 = add_object(db, now, ci1, 'label2', None, None, [2,3,4,5])
-    obj3 = add_object(db, now, ci2, 'label3', None, None, [2,3,4,5])
-    obj4 = add_object(db, now, ci2, 'label4', None, None, [1,4,8,16])
+    obj1 = add_object(db, now, ci1, 'label1', None, None, [1, 2, 3, 4])
+    obj2 = add_object(db, now, ci1, 'label2', None, None, [2, 3, 4, 5])
+    obj3 = add_object(db, now, ci2, 'label3', None, None, [2, 3, 4, 5])
+    obj4 = add_object(db, now, ci2, 'label4', None, None, [1, 4, 8, 16])
 
     expected = [
         {
@@ -200,8 +201,8 @@ def test_list_objects_in_image_prioritize_default_match_in_first(client, app,
     assert response.json == expected
 
 
-def test_list_objects_in_image_prioritize_default_match_not_in_first(client,
-        app, db, mocker):
+def test_list_objects_in_image_prioritize_default_match_not_in_first(
+        client, app, db, mocker):
     """
     In this test case, we add objects to an image only in campaign 2. The
     image is not part of campaign 1. We expect to get the return from
@@ -216,8 +217,8 @@ def test_list_objects_in_image_prioritize_default_match_not_in_first(client,
     img1, img2, img3 = add_images(db, imgset1, now)
     campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
     ci2 = add_image_to_campaign(db, img1, campaign2)
-    obj3 = add_object(db, now, ci2, 'label3', None, None, [2,3,4,5])
-    obj4 = add_object(db, now, ci2, 'label4', None, None, [1,4,8,16])
+    obj3 = add_object(db, now, ci2, 'label3', None, None, [2, 3, 4, 5])
+    obj4 = add_object(db, now, ci2, 'label4', None, None, [1, 4, 8, 16])
 
     expected = [
         {
@@ -255,8 +256,8 @@ def test_list_objects_in_image_prioritize_default_match_not_in_first(client,
     assert response.json == expected
 
 
-def test_list_objects_in_image_prioritize_provided_match_in_first(client, app,
-        db, mocker):
+def test_list_objects_in_image_prioritize_provided_match_in_first(
+        client, app, db, mocker):
     """
     In this test case, we add objects to an image in both campaign 1 and
     campaign 2. We then ask to get the return for campaign 2, and only if there
@@ -273,10 +274,10 @@ def test_list_objects_in_image_prioritize_provided_match_in_first(client, app,
     campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
     ci1 = add_image_to_campaign(db, img1, campaign1)
     ci2 = add_image_to_campaign(db, img1, campaign2)
-    obj1 = add_object(db, now, ci1, 'label1', None, None, [1,2,3,4])
-    obj2 = add_object(db, now, ci1, 'label2', None, None, [2,3,4,5])
-    obj3 = add_object(db, now, ci2, 'label3', None, None, [2,3,4,5])
-    obj4 = add_object(db, now, ci2, 'label4', None, None, [1,4,8,16])
+    obj1 = add_object(db, now, ci1, 'label1', None, None, [1, 2, 3, 4])
+    obj2 = add_object(db, now, ci1, 'label2', None, None, [2, 3, 4, 5])
+    obj3 = add_object(db, now, ci2, 'label3', None, None, [2, 3, 4, 5])
+    obj4 = add_object(db, now, ci2, 'label4', None, None, [1, 4, 8, 16])
 
     expected = [
         {
@@ -310,18 +311,18 @@ def test_list_objects_in_image_prioritize_provided_match_in_first(client, app,
     ]
 
     response = client.get("/api/v1/images/1/objects?campaigns=2,1",
-        headers=headers)
+                          headers=headers)
     assert response.status_code == 200
     assert response.json == expected
 
 
-def test_list_objects_in_image_prioritize_provided_match_not_in_first(client,
-        app, db, mocker):
+def test_list_objects_in_image_prioritize_provided_match_not_in_first(
+        client, app, db, mocker):
     """
-    In this test case, we add objects to an image in only campaign 1. Campaign 3
-    is set to unlabeled. We then ask to get the return for campaign 3, and only
-    if there is none from campaign 1. We expect to get the objects added in
-    campaign 1, as there are none from campaign 3.
+    In this test case, we add objects to an image in only campaign 1. Campaign
+    3 is set to unlabeled. We then ask to get the return for campaign 3, and
+    only if there is none from campaign 1. We expect to get the objects added
+    in campaign 1, as there are none from campaign 3.
     """
     headers = get_headers(db)
 
@@ -333,8 +334,8 @@ def test_list_objects_in_image_prioritize_provided_match_not_in_first(client,
     campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
     ci1 = add_image_to_campaign(db, img1, campaign1)
     ci2 = add_image_to_campaign(db, img1, campaign3)
-    obj1 = add_object(db, now, ci1, 'label1', None, None, [1,2,3,4])
-    obj2 = add_object(db, now, ci1, 'label2', None, None, [2,3,4,5])
+    obj1 = add_object(db, now, ci1, 'label1', None, None, [1, 2, 3, 4])
+    obj2 = add_object(db, now, ci1, 'label2', None, None, [2, 3, 4, 5])
 
     ci2.labeled = False
     db.session.commit()
@@ -371,13 +372,13 @@ def test_list_objects_in_image_prioritize_provided_match_not_in_first(client,
     ]
 
     response = client.get("/api/v1/images/1/objects?campaigns=3,1",
-        headers=headers)
+                          headers=headers)
     assert response.status_code == 200
     assert response.json == expected
 
 
-def test_list_objects_in_image_prioritize_provided_no_match(client, app, db,
-        mocker):
+def test_list_objects_in_image_prioritize_provided_no_match(
+        client, app, db, mocker):
     """
     In this test case, we add objects to an image in campaign 2. We then ask to
     get the images specifying only campaign 1. We expect to get no objects.
@@ -392,13 +393,13 @@ def test_list_objects_in_image_prioritize_provided_no_match(client, app, db,
     campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
     ci1 = add_image_to_campaign(db, img1, campaign1)
     ci2 = add_image_to_campaign(db, img1, campaign2)
-    obj3 = add_object(db, now, ci2, 'label3', None, None, [2,3,4,5])
-    obj4 = add_object(db, now, ci2, 'label4', None, None, [1,4,8,16])
+    obj3 = add_object(db, now, ci2, 'label3', None, None, [2, 3, 4, 5])
+    obj4 = add_object(db, now, ci2, 'label4', None, None, [1, 4, 8, 16])
 
     expected = []
 
     response = client.get("/api/v1/images/1/objects?campaigns=1",
-        headers=headers)
+                          headers=headers)
     assert response.status_code == 200
     assert response.json == expected
 
@@ -421,10 +422,10 @@ def test_list_objects_in_image_prioritize_default_match_in_first_not_finished(
     campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
     ci1 = add_image_to_campaign(db, img1, campaign3)
     ci2 = add_image_to_campaign(db, img1, campaign2)
-    obj1 = add_object(db, now, ci1, 'label1', None, None, [1,2,3,4])
-    obj2 = add_object(db, now, ci1, 'label2', None, None, [2,3,4,5])
-    obj3 = add_object(db, now, ci2, 'label3', None, None, [2,3,4,5])
-    obj4 = add_object(db, now, ci2, 'label4', None, None, [1,4,8,16])
+    obj1 = add_object(db, now, ci1, 'label1', None, None, [1, 2, 3, 4])
+    obj2 = add_object(db, now, ci1, 'label2', None, None, [2, 3, 4, 5])
+    obj3 = add_object(db, now, ci2, 'label3', None, None, [2, 3, 4, 5])
+    obj4 = add_object(db, now, ci2, 'label4', None, None, [1, 4, 8, 16])
 
     expected = [
         {
@@ -457,8 +458,7 @@ def test_list_objects_in_image_prioritize_default_match_in_first_not_finished(
         }
     ]
 
-    response = client.get("/api/v1/images/1/objects",
-        headers=headers)
+    response = client.get("/api/v1/images/1/objects", headers=headers)
     assert response.status_code == 200
     assert response.json == expected
 

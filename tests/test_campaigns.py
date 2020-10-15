@@ -17,10 +17,10 @@ def create_basic_testset(db):
     ci2 = add_image_to_campaign(db, img2, campaign3)
     ci3 = add_image_to_campaign(db, img3, campaign1)
 
-    obj1 = add_object(db, now, ci1, 'label1', None, None, [1,2,3,4])
-    obj2 = add_object(db, now, ci1, 'label2', None, None, [2,3,4,5])
+    obj1 = add_object(db, now, ci1, 'label1', None, None, [1, 2, 3, 4])
+    obj2 = add_object(db, now, ci1, 'label2', None, None, [2, 3, 4, 5])
     obj3 = add_object(db, now, ci2, 'label3', 'translated_label3', 0.87,
-        [6,7,8,9])
+                      [6, 7, 8, 9])
 
     ci2.labeled = False
     db.session.commit()
@@ -133,7 +133,7 @@ def test_list_campaigns_pagination(client, app, db, mocker):
     }
 
     response = client.get("/api/v1/campaigns?page=2&per_page=2",
-        headers=headers)
+                          headers=headers)
     assert response.status_code == 200
     assert response.json == expected
 
@@ -204,7 +204,7 @@ def test_new_campaign(client, app, db, mocker):
 
     # Check if user created and role set correctly
     user = db.session.query(User)\
-           .filter(User.email == "labeler@example.com").first()
+                     .filter(User.email == "labeler@example.com").first()
     assert user is not None
     assert user.API_KEY == response.json["access_token"]["apikey"]
     assert bcrypt.checkpw(
@@ -213,11 +213,11 @@ def test_new_campaign(client, app, db, mocker):
     )
 
     role = db.session.query(Role)\
-           .filter(db.and_(
-               Role.user == user,
-               Role.subject_type == "campaign",
-               Role.subject_id == item.id)
-           )
+                     .filter(db.and_(
+                         Role.user == user,
+                         Role.subject_type == "campaign",
+                         Role.subject_id == item.id)
+                     )
     assert role is not None
 
 
@@ -301,7 +301,7 @@ def test_new_campaign_existing_user(client, app, db, mocker):
 
     # Check if user created and role set correctly
     user = db.session.query(User)\
-           .filter(User.email == "labeler@example.com").first()
+                     .filter(User.email == "labeler@example.com").first()
     assert user is not None
     assert user.API_KEY == response.json["access_token"]["apikey"]
 
@@ -312,11 +312,11 @@ def test_new_campaign_existing_user(client, app, db, mocker):
     )
 
     role = db.session.query(Role)\
-           .filter(db.and_(
-               Role.user == user,
-               Role.subject_type == "campaign",
-               Role.subject_id == item.id)
-           )
+                     .filter(db.and_(
+                         Role.user == user,
+                         Role.subject_type == "campaign",
+                         Role.subject_id == item.id)
+                     )
     assert role is not None
 
 
@@ -394,7 +394,7 @@ def test_new_campaign_existing_user_no_key(client, app, db, mocker):
 
     # Check if user created and role set correctly
     user = db.session.query(User)\
-           .filter(User.email == "labeler@example.com").first()
+                     .filter(User.email == "labeler@example.com").first()
     assert user is not None
     assert user.API_KEY == response.json["access_token"]["apikey"]
     assert bcrypt.checkpw(
@@ -403,11 +403,11 @@ def test_new_campaign_existing_user_no_key(client, app, db, mocker):
     )
 
     role = db.session.query(Role)\
-           .filter(db.and_(
-               Role.user == user,
-               Role.subject_type == "campaign",
-               Role.subject_id == item.id)
-           )
+                     .filter(db.and_(
+                         Role.user == user,
+                         Role.subject_type == "campaign",
+                         Role.subject_id == item.id)
+                     )
     assert role is not None
 
 
@@ -535,7 +535,6 @@ def test_get_objects_in_campaign(client, app, db, mocker):
 
     now, yesterday = create_basic_testset(db)
 
-
     expected = {
         "pagination": {
             "page": 1,
@@ -602,7 +601,7 @@ def test_get_objects_in_campaign(client, app, db, mocker):
             }
         ]
     }
-    
+
     response = client.get("/api/v1/campaigns/3/objects", headers=headers)
     assert response.status_code == 200
     assert response.json == expected
@@ -635,14 +634,13 @@ def test_get_images_in_campaign_with_campaign_key(client, app, db, mocker):
         ]
     }
 
-    response = client.get("/api/v1/campaigns/3/images",
-        headers=headers)
+    response = client.get("/api/v1/campaigns/3/images", headers=headers)
     assert response.status_code == 200
     assert response.json == expected
 
 
-def test_get_images_in_campaign_with_campaign_key_paginated(client, app, db,
-        mocker):
+def test_get_images_in_campaign_with_campaign_key_paginated(
+        client, app, db, mocker):
     now, yesterday = create_basic_testset(db)
 
     # Add labeling user on campaign 3
@@ -666,13 +664,13 @@ def test_get_images_in_campaign_with_campaign_key_paginated(client, app, db,
     }
 
     response = client.get("/api/v1/campaigns/3/images?page=2&per_page=1",
-        headers=headers)
+                          headers=headers)
     assert response.status_code == 200
     assert response.json == expected
 
 
-def test_get_images_in_campaign_with_invalid_campaign_key(client, app, db,
-        mocker):
+def test_get_images_in_campaign_with_invalid_campaign_key(
+        client, app, db, mocker):
     now, yesterday = create_basic_testset(db)
 
     # Add labeling user on campaign 3
@@ -712,8 +710,7 @@ def test_images_in_campaign_with_user_key(client, app, db, mocker):
         ]
     }
 
-    response = client.get("/api/v1/campaigns/3/images",
-        headers=headers)
+    response = client.get("/api/v1/campaigns/3/images", headers=headers)
     assert response.status_code == 200
     assert response.json == expected
 

@@ -15,7 +15,8 @@ def list_imagesets(page=1, per_page=10):
         abort(401)
 
     imagesets = ImageSet.query\
-                .order_by(ImageSet.id).paginate(page=page, per_page=per_page)
+                        .order_by(ImageSet.id)\
+                        .paginate(page=page, per_page=per_page)
     return {
         'pagination': {
             'page': imagesets.page,
@@ -59,7 +60,7 @@ def change_status(imageset_id, body):
     else:
         abort(
             409,
-            f'Not allowed to go from "{imageset.status}" to ' \
+            f'Not allowed to go from "{imageset.status}" to '
             f'"{body["new_status"]}"'
         )
 
@@ -115,5 +116,3 @@ def add_images(imageset_id, body):
         return "ok"
     else:
         abort(sc, msg)
-
-    return "Not Implemented: image_sets.add_images"

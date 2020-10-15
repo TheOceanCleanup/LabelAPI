@@ -15,7 +15,8 @@ def list_images(page=1, per_page=10):
     if not flask_login.current_user.has_role('image-admin'):
         abort(401)
 
-    images = Image.query.order_by(Image.id).paginate(page=page, per_page=per_page)
+    images = Image.query.order_by(Image.id).paginate(page=page,
+                                                     per_page=per_page)
     return {
         'pagination': {
             'page': images.page,
