@@ -1,5 +1,5 @@
 from tests.shared import get_headers, add_user, add_imagesets, add_images, \
-    add_campaigns, add_image_to_campaign, add_object
+    add_campaigns, add_image_to_campaign, add_object, add_labeler_user
 import datetime
 
 
@@ -11,7 +11,8 @@ def create_basic_testset(db):
     img1, img2, img3 = add_images(db, imgset1, now)
     campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
     ci1 = add_image_to_campaign(db, img1, campaign3)
-    ci2 = add_image_to_campaign(db, img1, campaign3)
+    ci2 = add_image_to_campaign(db, img2, campaign3)
+    ci3 = add_image_to_campaign(db, img3, campaign1)
     ci2.labeled = False
     db.session.commit()
     return now, yesterday
@@ -37,8 +38,8 @@ def test_list_campaigns(client, app, db, mocker):
                 "title": "Some Campaign",
                 "status": "finished",
                 "progress": {
-                    "total": 0,
-                    "done": 0
+                    "total": 1,
+                    "done": 1
                 },
                 "metadata": {"key": "value"},
                 "label_translations": {"PET": "plastic"},
@@ -254,23 +255,113 @@ def test_get_objects_in_campaign(client, app, db, mocker):
 
 
 def test_get_images_in_campaign_with_campaign_key(client, app, db, mocker):
-    headers = get_headers(db)  # TODO: Change this to campaign keys
+    now, yesterday = create_basic_testset(db)
 
-    # TODO: add images, campaigns to DB
+    # Add labeling user on campaign 3
+    headers = add_labeler_user(db, 'campaign', 3)
 
-    response = client.get("/api/v1/campaigns/1/images", headers=headers)
+    expected = {
+        "pagination": {
+            "page": 1,
+            "pages": 1,
+            "total": 2,
+            "per_page": 1000,
+            "next": None,
+            "prev": None
+        },
+        "images": [
+            {
+                "image_id": 1,
+                "url": "/images/1"
+            },
+            {
+                "image_id": 2,
+                "url": "/images/2"
+            }
+        ]
+    }
+
+    response = client.get("/api/v1/campaigns/3/images",
+        headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: campaigns.get_images"
+    assert response.json == expected
+
+
+def test_get_images_in_campaign_with_campaign_key_paginated(client, app, db,
+        mocker):
+    now, yesterday = create_basic_testset(db)
+
+    # Add labeling user on campaign 3
+    headers = add_labeler_user(db, 'campaign', 3)
+
+    expected = {
+        "pagination": {
+            "page": 2,
+            "pages": 2,
+            "total": 2,
+            "per_page": 1,
+            "next": None,
+            "prev": 1
+        },
+        "images": [
+            {
+                "image_id": 2,
+                "url": "/images/2"
+            }
+        ]
+    }
+
+    response = client.get("/api/v1/campaigns/3/images?page=2&per_page=1",
+        headers=headers)
+    assert response.status_code == 200
+    assert response.json == expected
+
+
+def test_get_images_in_campaign_with_invalid_campaign_key(client, app, db,
+        mocker):
+    now, yesterday = create_basic_testset(db)
+
+    # Add labeling user on campaign 3
+    headers = add_labeler_user(db, 'campaign', 3)
+
+    # Note the campaign id 2 in the requested link, this user has no role for
+    # that
+    response = client.get("/api/v1/campaigns/2/images", headers=headers)
+    assert response.status_code == 401
 
 
 def test_images_in_campaign_with_user_key(client, app, db, mocker):
     headers = get_headers(db)
+    now, yesterday = create_basic_testset(db)
 
-    # TODO: add images, campaigns to DB
+    # Add labeling user on campaign 3. Dont use the headers though
+    add_labeler_user(db, 'campaign', 3)
 
-    response = client.get("/api/v1/campaigns/1/images", headers=headers)
+    expected = {
+        "pagination": {
+            "page": 1,
+            "pages": 1,
+            "total": 2,
+            "per_page": 1000,
+            "next": None,
+            "prev": None
+        },
+        "images": [
+            {
+                "image_id": 1,
+                "url": "/images/1"
+            },
+            {
+                "image_id": 2,
+                "url": "/images/2"
+            }
+        ]
+    }
+
+    response = client.get("/api/v1/campaigns/3/images",
+        headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: campaigns.get_images"
+    assert response.json == expected
 
 
 def test_add_objects_to_images_in_campaign_with_campaign_key(client, app, db,

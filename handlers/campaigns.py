@@ -1,5 +1,6 @@
 from common.auth import flask_login
-from models.campaign import Campaign
+from models.campaign import Campaign, CampaignImage
+from flask import abort
 
 
 @flask_login.login_required
@@ -15,7 +16,6 @@ def list_campaigns(page=1, per_page=10):
 
     campaigns = Campaign.query.order_by(Campaign.id)\
                 .paginate(page=page, per_page=per_page)
-    print(campaigns)
     return {
         'pagination': {
             'page': campaigns.page,
@@ -75,7 +75,40 @@ def get_images(campaign_id, page=1, per_page=1000):
 
     Get a list of images for a campaign.
     """
-    return "Not Implemented: campaigns.get_images"
+    # Check if logged in user has correct permissions. Can be either
+    # image-admin or labeler on the specific campaign
+    if not (
+            flask_login.current_user.has_role('image-admin') or
+            flask_login.current_user.has_role_on_subject('labeler', 'campaign',
+                campaign_id)):
+        abort(401)
+
+    campaign = Campaign.query.get(campaign_id)
+    if campaign is None:
+        abort(404)
+
+    # Access to campaign images through query, to allow for pagination
+    c_images = CampaignImage.query\
+               .filter(CampaignImage.campaign_id == campaign.id)\
+               .order_by(CampaignImage.id)\
+               .paginate(page=page, per_page=per_page)
+    return {
+        'pagination': {
+            'page': c_images.page,
+            'pages': c_images.page,
+            'total': c_images.total,
+            'per_page': c_images.per_page,
+            'prev': (c_images.prev_num if c_images.has_prev else None),
+            'next': (c_images.next_num if c_images.has_next else None)
+        },
+        'images': [
+            {
+                "image_id": x.image.id,
+                "url": x.image.get_api_url()
+            }
+            for x in c_images.items
+        ]
+    }
 
 
 @flask_login.login_required

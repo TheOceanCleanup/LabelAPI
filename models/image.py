@@ -61,6 +61,12 @@ class Image(db.Model):
             }
         }
 
+    def get_api_url(self):
+        """
+        Return the (relative) url that points towards the redirected download.
+        """
+        return f"/images/{self.id}"
+
     def get_objects(self, campaigns=[]):
         """
         Get the objects in this image. If these exist for multiple  campaigns,

@@ -43,6 +43,35 @@ def add_user(db):
     return user
 
 
+def add_labeler_user(db, subject_type, subject_id):
+    api_key = "label-key"
+    api_secret = "some secret value"
+    hashed = bcrypt.hashpw(api_secret.encode(), bcrypt.gensalt())
+    user = User(
+        email="labeler@example.com",
+        API_KEY=api_key,
+        API_SECRET=hashed
+    )
+    db.session.add(user)
+
+    role = Role(
+        role='labeler',
+        user=user,
+        subject_type=subject_type,
+        subject_id=subject_id
+    )
+    db.session.add(role)
+
+    db.session.commit()
+
+    headers = {
+        'Authentication-Key': api_key,
+        'Authentication-Secret': api_secret
+    }
+
+    return headers
+
+
 def add_imagesets(db, user, now):
     imgset1 = ImageSet(
         id=1,
