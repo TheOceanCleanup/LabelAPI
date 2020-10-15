@@ -1,5 +1,6 @@
 from common.db import db
 from sqlalchemy.dialects.postgresql import JSONB
+from models.user import Role
 
 
 class Campaign(db.Model):
@@ -52,6 +53,17 @@ class Campaign(db.Model):
             'date_finished': self.date_finished,
             'created_by': self.created_by.email
         }
+
+    def give_labeler_access(self, user):
+        role = Role(
+            role='labeler',
+            user=user,
+            subject_type='campaign',
+            subject_id=self.id
+        )
+        db.session.add(role)
+        db.session.commit()
+        return True
 
 
 class CampaignImage(db.Model):

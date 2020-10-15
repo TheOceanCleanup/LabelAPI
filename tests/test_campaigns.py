@@ -1,6 +1,9 @@
 from tests.shared import get_headers, add_user, add_imagesets, add_images, \
     add_campaigns, add_image_to_campaign, add_object, add_labeler_user
+from models.campaign import Campaign
+from models.user import User, Role
 import datetime
+import bcrypt
 
 
 def create_basic_testset(db):
@@ -139,23 +142,299 @@ def test_new_campaign(client, app, db, mocker):
     headers = get_headers(db)
 
     json_payload = {
-        'title': 'Some test set',
-        'labeler_email': 'label@example.com',
-        'metadata': {
-            'field1': 'value1',
-            'field2': {
-                'subfield1': 'value2',
-                'subfield2': 3
+        "title": "Some test set",
+        "labeler_email": "labeler@example.com",
+        "metadata": {
+            "field1": "value1",
+            "field2": {
+                "subfield1": "value2",
+                "subfield2": 3
             }
         },
-        'label_translations': {
-            'original_label': 'translated_label'
+        "label_translations": {
+            "original_label": "translated_label"
         }
     }
+
+    expected = {
+        "campaign_id": 1,
+        "title": "Some test set",
+        "status": "created",
+        "progress": {
+            "total": 0,
+            "done": 0
+        },
+        "metadata": {
+            "field1": "value1",
+            "field2": {
+                "subfield1": "value2",
+                "subfield2": 3
+            }
+        },
+        "label_translations": {
+            "original_label": "translated_label"
+        },
+        "created_by": "test@example.com",
+        "access_token": {
+            "apikey": "string",  # Not actual value, checked separately
+            "apisecret": "string"  # Not actual value, checked separately
+        },
+        "date_created": "string",  # Not actual value, checked separately
+        "date_started": None,
+        "date_completed": None,
+        "date_finished": None,
+    }
+
     response = client.post(
         "/api/v1/campaigns", json=json_payload, headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: campaigns.add_campaign"
+
+    for x in ["campaign_id", "title", "status", "progress", "metadata",
+              "label_translations", "date_started", "date_completed",
+              "date_finished", "created_by"]:
+        assert response.json[x] == expected[x]
+
+    assert response.json["access_token"]["apikey"] is not None
+    assert response.json["access_token"]["apisecret"] is not None
+    assert response.json["date_created"] is not None
+
+    # Check if actually added to DB
+    item = db.session.query(Campaign).first()
+    assert item is not None and item.title == "Some test set"
+
+    # Check if user created and role set correctly
+    user = db.session.query(User)\
+           .filter(User.email == "labeler@example.com").first()
+    assert user is not None
+    assert user.API_KEY == response.json["access_token"]["apikey"]
+    assert bcrypt.checkpw(
+        response.json["access_token"]["apisecret"].encode(),
+        user.API_SECRET
+    )
+
+    role = db.session.query(Role)\
+           .filter(db.and_(
+               Role.user == user,
+               Role.subject_type == "campaign",
+               Role.subject_id == item.id)
+           )
+    assert role is not None
+
+
+def test_new_campaign_existing_user(client, app, db, mocker):
+    headers = get_headers(db)
+
+    # Add user first
+    api_key = "label-key"
+    api_secret = "some secret value"
+    hashed = bcrypt.hashpw(api_secret.encode(), bcrypt.gensalt())
+    user = User(
+        email="labeler@example.com",
+        API_KEY=api_key,
+        API_SECRET=hashed
+    )
+    db.session.add(user)
+    db.session.commit()
+
+    json_payload = {
+        "title": "Some test set",
+        "labeler_email": "labeler@example.com",
+        "metadata": {
+            "field1": "value1",
+            "field2": {
+                "subfield1": "value2",
+                "subfield2": 3
+            }
+        },
+        "label_translations": {
+            "original_label": "translated_label"
+        }
+    }
+
+    expected = {
+        "campaign_id": 1,
+        "title": "Some test set",
+        "status": "created",
+        "progress": {
+            "total": 0,
+            "done": 0
+        },
+        "metadata": {
+            "field1": "value1",
+            "field2": {
+                "subfield1": "value2",
+                "subfield2": 3
+            }
+        },
+        "label_translations": {
+            "original_label": "translated_label"
+        },
+        "created_by": "test@example.com",
+        "access_token": {
+            "apikey": "string",  # Not actual value, checked separately
+            "apisecret": "string"  # Not actual value, checked separately
+        },
+        "date_created": "string",  # Not actual value, checked separately
+        "date_started": None,
+        "date_completed": None,
+        "date_finished": None,
+    }
+
+    response = client.post(
+        "/api/v1/campaigns", json=json_payload, headers=headers)
+    assert response.status_code == 200
+
+    for x in ["campaign_id", "title", "status", "progress", "metadata",
+              "label_translations", "date_started", "date_completed",
+              "date_finished", "created_by"]:
+        assert response.json[x] == expected[x]
+
+    # Verify that the secret is not returned, but the correct (existing) key
+    # is
+    assert response.json["access_token"]["apikey"] == "label-key"
+    assert response.json["access_token"]["apisecret"] is None
+    assert response.json["date_created"] is not None
+
+    # Check if actually added to DB
+    item = db.session.query(Campaign).first()
+    assert item is not None and item.title == "Some test set"
+
+    # Check if user created and role set correctly
+    user = db.session.query(User)\
+           .filter(User.email == "labeler@example.com").first()
+    assert user is not None
+    assert user.API_KEY == response.json["access_token"]["apikey"]
+
+    # Assert that previously set secret is still valid
+    assert bcrypt.checkpw(
+        api_secret.encode(),
+        user.API_SECRET
+    )
+
+    role = db.session.query(Role)\
+           .filter(db.and_(
+               Role.user == user,
+               Role.subject_type == "campaign",
+               Role.subject_id == item.id)
+           )
+    assert role is not None
+
+
+def test_new_campaign_existing_user_no_key(client, app, db, mocker):
+    headers = get_headers(db)
+
+    # Add user first, with no key this time
+    user = User(
+        email="labeler@example.com"
+    )
+    db.session.add(user)
+    db.session.commit()
+
+    json_payload = {
+        "title": "Some test set",
+        "labeler_email": "labeler@example.com",
+        "metadata": {
+            "field1": "value1",
+            "field2": {
+                "subfield1": "value2",
+                "subfield2": 3
+            }
+        },
+        "label_translations": {
+            "original_label": "translated_label"
+        }
+    }
+
+    expected = {
+        "campaign_id": 1,
+        "title": "Some test set",
+        "status": "created",
+        "progress": {
+            "total": 0,
+            "done": 0
+        },
+        "metadata": {
+            "field1": "value1",
+            "field2": {
+                "subfield1": "value2",
+                "subfield2": 3
+            }
+        },
+        "label_translations": {
+            "original_label": "translated_label"
+        },
+        "created_by": "test@example.com",
+        "access_token": {
+            "apikey": "string",  # Not actual value, checked separately
+            "apisecret": "string"  # Not actual value, checked separately
+        },
+        "date_created": "string",  # Not actual value, checked separately
+        "date_started": None,
+        "date_completed": None,
+        "date_finished": None,
+    }
+
+    response = client.post(
+        "/api/v1/campaigns", json=json_payload, headers=headers)
+    assert response.status_code == 200
+
+    for x in ["campaign_id", "title", "status", "progress", "metadata",
+              "label_translations", "date_started", "date_completed",
+              "date_finished", "created_by"]:
+        assert response.json[x] == expected[x]
+
+    # Verify that a new secret and new key are returned
+    assert response.json["access_token"]["apikey"] is not None
+    assert response.json["access_token"]["apisecret"] is not None
+    assert response.json["date_created"] is not None
+
+    # Check if actually added to DB
+    item = db.session.query(Campaign).first()
+    assert item is not None and item.title == "Some test set"
+
+    # Check if user created and role set correctly
+    user = db.session.query(User)\
+           .filter(User.email == "labeler@example.com").first()
+    assert user is not None
+    assert user.API_KEY == response.json["access_token"]["apikey"]
+    assert bcrypt.checkpw(
+        response.json["access_token"]["apisecret"].encode(),
+        user.API_SECRET
+    )
+
+    role = db.session.query(Role)\
+           .filter(db.and_(
+               Role.user == user,
+               Role.subject_type == "campaign",
+               Role.subject_id == item.id)
+           )
+    assert role is not None
+
+
+def test_new_campaign_duplicate_title(client, app, db, mocker):
+    headers = get_headers(db)
+
+    # Add some campaigns already
+    create_basic_testset(db)
+
+    json_payload = {
+        "title": "Some Campaign",  # This campaign should already exist
+        "labeler_email": "labeler@example.com",
+        "metadata": {
+            "field1": "value1",
+            "field2": {
+                "subfield1": "value2",
+                "subfield2": 3
+            }
+        },
+        "label_translations": {
+            "original_label": "translated_label"
+        }
+    }
+
+    response = client.post(
+        "/api/v1/campaigns", json=json_payload, headers=headers)
+    assert response.status_code == 409
 
 
 def test_get_campaign_metadata(client, app, db, mocker):

@@ -1,5 +1,6 @@
 from common.auth import flask_login
 from models.campaign import Campaign, CampaignImage
+from models.user import User
 from flask import abort
 
 
@@ -154,7 +155,41 @@ def add_campaign(body):
     Note: Check if user already exists. If so use that. Check also if user
     already has a key. If not, create.
     """
-    return "Not Implemented: campaigns.add_campaign"
+    # Check if logged in user has correct permissions.
+    if not flask_login.current_user.has_role('image-admin'):
+        abort(401)
+
+    # Check if there's already a campaign with this title
+    if Campaign.query.filter(Campaign.title == body['title']).first() is not None:
+        abort(409, "Another campaign with this name already exists")
+
+    # Find if a user already exists, otherwise create it
+    user = User.find_or_create(body['labeler_email'])
+
+    # Check if the user already has an API key
+    if user.API_KEY is not None:
+        key = user.API_KEY
+        secret = None
+    else:
+        key, secret = user.generate_api_key()
+
+    # Create campaign itself
+    campaign = Campaign(
+        title=body['title'],
+        meta_data=body.get('metadata', None),
+        label_translations=body.get('label_translations', None),
+        created_by=flask_login.current_user
+    )
+
+    # Add role to user that gives access to the campaign
+    campaign.give_labeler_access(user)
+
+    response = campaign.to_dict()
+    response['access_token'] = {
+        "apikey": key,
+        "apisecret": secret
+    }
+    return response
 
 
 @flask_login.login_required

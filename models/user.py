@@ -3,6 +3,7 @@ from sqlalchemy.dialects.postgresql import BYTEA
 from sqlalchemy.orm import validates
 import bcrypt
 import flask_login
+import secrets
 
 
 class User(db.Model, flask_login.UserMixin):
@@ -43,6 +44,26 @@ class User(db.Model, flask_login.UserMixin):
             x.has_role_on_subject(role, subject_type, subject_id)
             for x in self.roles
         ])
+
+    def generate_api_key(self):
+        api_key = secrets.token_hex(16)
+        api_secret = secrets.token_hex(16)
+        hashed = bcrypt.hashpw(api_secret.encode(), bcrypt.gensalt())
+        self.API_KEY = api_key
+        self.API_SECRET = hashed
+        db.session.commit()
+
+        return api_key, api_secret
+
+    @staticmethod
+    def find_or_create(email):
+        user = User.query.filter(User.email == email).first()
+        if user is None:
+            user = User(email=email)
+            db.session.add(user)
+            db.session.commit()
+
+        return user
 
 
 class Role(db.Model):
