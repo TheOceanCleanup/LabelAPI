@@ -1,18 +1,14 @@
 from tests.shared import get_headers, add_user, add_imagesets, add_images, \
     add_campaigns, add_image_to_campaign, add_object, add_labeler_user
-from models.campaign import Campaign
+from models.campaign import Campaign, CampaignImage
 from models.user import User, Role
 import datetime
 import bcrypt
 
 
 def create_basic_testset(db):
-    now = datetime.datetime.now()
-    yesterday = now - datetime.timedelta(days=1)
-    user = add_user(db)
-    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
-    img1, img2, img3 = add_images(db, imgset1, now)
-    campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
+    now, yesterday, user, img1, img2, img3, campaign1, campaign2, campaign3 = \
+        add_images_campaigns(db)
     ci1 = add_image_to_campaign(db, img1, campaign3)
     ci2 = add_image_to_campaign(db, img2, campaign3)
     ci3 = add_image_to_campaign(db, img3, campaign1)
@@ -25,6 +21,16 @@ def create_basic_testset(db):
     ci2.labeled = False
     db.session.commit()
     return now, yesterday
+
+
+def add_images_campaigns(db):
+    now = datetime.datetime.now()
+    yesterday = now - datetime.timedelta(days=1)
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
+    campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
+    return now, yesterday, user, img1, img2, img3, campaign1, campaign2, campaign3
 
 
 def test_list_campaigns(client, app, db, mocker):
@@ -77,7 +83,7 @@ def test_list_campaigns(client, app, db, mocker):
             {
                 "campaign_id": 3,
                 "title": "A third Campaign",
-                "status": "active",
+                "status": "created",
                 "progress": {
                     "total": 2,
                     "done": 1
@@ -116,7 +122,7 @@ def test_list_campaigns_pagination(client, app, db, mocker):
             {
                 "campaign_id": 3,
                 "title": "A third Campaign",
-                "status": "active",
+                "status": "created",
                 "progress": {
                     "total": 2,
                     "done": 1
@@ -445,7 +451,7 @@ def test_get_campaign_metadata(client, app, db, mocker):
     expected = {
         "campaign_id": 3,
         "title": "A third Campaign",
-        "status": "active",
+        "status": "created",
         "progress": {
             "total": 2,
             "done": 1
@@ -482,52 +488,109 @@ def test_change_campaign_status(client, app, db, mocker):
 def test_add_images_to_campaign_by_id(client, app, db, mocker):
     headers = get_headers(db)
 
-    # TODO: add some campaigns and images to DB and set IDs below
+    now, yesterday, user, img1, img2, img3, campaign1, campaign2, campaign3 = \
+        add_images_campaigns(db)
 
     json_payload = [
         {'id': 1},
-        {'id': 2},
-        {'id': 5}
+        {'id': 3}
     ]
 
     response = client.post(
-        "/api/v1/campaigns/1/images", json=json_payload, headers=headers)
+        "/api/v1/campaigns/3/images", json=json_payload, headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: campaigns.add_images"
+    assert response.json == "ok"
+
+    images = [x.image for x in campaign3.campaign_images]
+    assert img1 in images
+    assert img3 in images
+    assert img2 not in images
 
 
 def test_add_images_to_campaign_by_blobstorage_path(client, app, db, mocker):
     headers = get_headers(db)
 
-    # TODO: add some campaigns and images to DB and set IDs below
+    now, yesterday, user, img1, img2, img3, campaign1, campaign2, campaign3 = \
+        add_images_campaigns(db)
 
     json_payload = [
-        {'filepath': '/'},
-        {'filepath': '/'},
-        {'filepath': '/'}
+        {'filepath': '/some/path/file1.png'},
+        {'filepath': '/some/otherpath/file3.png'}
     ]
 
     response = client.post(
-        "/api/v1/campaigns/1/images", json=json_payload, headers=headers)
+        "/api/v1/campaigns/3/images", json=json_payload, headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: campaigns.add_images"
+    assert response.json == "ok"
+
+    images = [x.image for x in campaign3.campaign_images]
+    assert img1 in images
+    assert img3 in images
+    assert img2 not in images
 
 
 def test_add_images_to_campaign_mixed(client, app, db, mocker):
     headers = get_headers(db)
 
-    # TODO: add some campaigns and images to DB and set IDs below
+    now, yesterday, user, img1, img2, img3, campaign1, campaign2, campaign3 = \
+        add_images_campaigns(db)
 
     json_payload = [
-        {'filepath': '/'},
-        {'id': 3},
-        {'filepath': '/'}
+        {'filepath': '/some/path/file1.png'},
+        {'id': 3}
     ]
 
     response = client.post(
-        "/api/v1/campaigns/1/images", json=json_payload, headers=headers)
+        "/api/v1/campaigns/3/images", json=json_payload, headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: campaigns.add_images"
+    assert response.json == "ok"
+
+    images = [x.image for x in campaign3.campaign_images]
+    assert img1 in images
+    assert img3 in images
+    assert img2 not in images
+
+
+def test_add_images_to_campaign_doesnt_exist(client, app, db, mocker):
+    headers = get_headers(db)
+
+    now, yesterday, user, img1, img2, img3, campaign1, campaign2, campaign3 = \
+        add_images_campaigns(db)
+
+    json_payload = [
+        {'id': 3},
+        {'id': 10}
+    ]
+
+    response = client.post(
+        "/api/v1/campaigns/3/images", json=json_payload, headers=headers)
+    assert response.status_code == 404
+    assert response.json['detail'] == "Unknown image provided"
+
+    # Verify that no images where added at all
+    assert len(campaign3.campaign_images) == 0
+
+
+def test_add_images_to_campaign_invalid_state(client, app, db, mocker):
+    headers = get_headers(db)
+
+    now, yesterday, user, img1, img2, img3, campaign1, campaign2, campaign3 = \
+        add_images_campaigns(db)
+
+    json_payload = [
+        {'id': 1},
+        {'id': 3}
+    ]
+
+    # Note campaign 2 - this has status finished
+    response = client.post(
+        "/api/v1/campaigns/2/images", json=json_payload, headers=headers)
+    assert response.status_code == 409
+    assert response.json['detail'] == \
+        'Not allowed to add images while status is "finished"'
+
+    # Verify that no images where added at all
+    assert len(campaign2.campaign_images) == 0
 
 
 def test_get_objects_in_campaign(client, app, db, mocker):

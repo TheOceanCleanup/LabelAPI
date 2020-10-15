@@ -1,6 +1,7 @@
 from common.db import db
 from sqlalchemy.dialects.postgresql import JSONB
 from models.user import User, Role
+from models.image import Image
 
 
 class Campaign(db.Model):
@@ -65,6 +66,52 @@ class Campaign(db.Model):
         if commit:
             db.session.commit()
         return True
+
+    def add_images(self, images):
+        """
+        Add images to this campaign. Images could be provided by ID or by
+        blobstorage path. Only allow adding images if current status of the
+        campaign is "created".
+
+        :params images:     List of images to add. Provided as objects, either
+                            with 'id' or as 'filepath' as sole property.
+        :returns boolean:   Success or not
+        :returns int:       Status code in case of failure - 404 if image does
+                            not exist, 400 if invalid request or 409 if status
+                            of campaign != created
+        :returns string:    Error message in case of failure
+        """
+        if self.status != 'created':
+            return False, 409, \
+                f'Not allowed to add images while status is "{self.status}"'
+
+        for i in images:
+            # Find image.
+            # NOTE: Connexion has already validated for us that either id or
+            #       filepath exists, hence the simple else statement
+            if 'id' in i:
+                image = Image.query.get(i['id'])
+            else:
+                image = Image.query\
+                        .filter(Image.blobstorage_path == i['filepath'])\
+                        .first()
+
+            # Check if image exists
+            if image is None:
+                db.session.rollback()
+                return False, 404, "Unknown image provided"
+
+            # All good, add image to campaign, if not yet added (if it is,
+            # simply ignore). Note that this is not commited yet, allowing a
+            # rollback in case on of the other images can't be added
+            if not image in [x.image for x in self.campaign_images]:
+                campaign_image = CampaignImage(campaign_id=self.id,
+                                               image_id=image.id)
+                db.session.add(campaign_image)
+
+        # Now that everything is done with no errors, we can commit.
+        db.session.commit()
+        return True, None, None
 
     @staticmethod
     def create(labeler_email, title, created_by, metadata=None,

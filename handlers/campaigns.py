@@ -184,9 +184,21 @@ def add_images(campaign_id, body):
 
     Add images to a campaign
 
-    Note: Can only add to active set
+    Note: Can only add to created set
     """
-    return "Not Implemented: campaigns.add_images"
+    # Check if logged in user has correct permissions
+    if not flask_login.current_user.has_role('image-admin'):
+        abort(401)
+
+    campaign = Campaign.query.get(campaign_id)
+    if campaign is None:
+        abort(404)
+
+    success, sc, msg = campaign.add_images(body)
+    if success:
+        return "ok"
+    else:
+        abort(sc, msg)
 
 
 @flask_login.login_required
