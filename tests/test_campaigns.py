@@ -3,9 +3,7 @@ from tests.shared import get_headers, add_user, add_imagesets, add_images, \
 import datetime
 
 
-def test_list_campaigns(client, app, db, mocker):
-    headers = get_headers(db)
-
+def create_basic_testset(db):
     now = datetime.datetime.now()
     yesterday = now - datetime.timedelta(days=1)
     user = add_user(db)
@@ -16,6 +14,13 @@ def test_list_campaigns(client, app, db, mocker):
     ci2 = add_image_to_campaign(db, img1, campaign3)
     ci2.labeled = False
     db.session.commit()
+    return now, yesterday
+
+
+def test_list_campaigns(client, app, db, mocker):
+    headers = get_headers(db)
+
+    now, yesterday = create_basic_testset(db)
 
     expected = {
         "pagination": {
@@ -86,16 +91,7 @@ def test_list_campaigns(client, app, db, mocker):
 def test_list_campaigns_pagination(client, app, db, mocker):
     headers = get_headers(db)
 
-    now = datetime.datetime.now()
-    yesterday = now - datetime.timedelta(days=1)
-    user = add_user(db)
-    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
-    img1, img2, img3 = add_images(db, imgset1, now)
-    campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
-    ci1 = add_image_to_campaign(db, img1, campaign3)
-    ci2 = add_image_to_campaign(db, img1, campaign3)
-    ci2.labeled = False
-    db.session.commit()
+    now, yesterday = create_basic_testset(db)
 
     expected = {
         "pagination": {
@@ -126,7 +122,8 @@ def test_list_campaigns_pagination(client, app, db, mocker):
         ]
     }
 
-    response = client.get("/api/v1/campaigns?page=2&per_page=2", headers=headers)
+    response = client.get("/api/v1/campaigns?page=2&per_page=2",
+        headers=headers)
     assert response.status_code == 200
     assert response.json == expected
 
@@ -157,11 +154,28 @@ def test_new_campaign(client, app, db, mocker):
 def test_get_campaign_metadata(client, app, db, mocker):
     headers = get_headers(db)
 
-    # TODO: add some campaign to DB and set ID in url below
+    now, yesterday = create_basic_testset(db)
 
-    response = client.get("/api/v1/campaigns/1", headers=headers)
+    expected = {
+        "campaign_id": 3,
+        "title": "A third Campaign",
+        "status": "active",
+        "progress": {
+            "total": 2,
+            "done": 1
+        },
+        "metadata": None,
+        "label_translations": None,
+        "date_created": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+        "date_started": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+        "date_completed": None,
+        "date_finished": None,
+        "created_by": "someone@example.com"
+    }
+
+    response = client.get("/api/v1/campaigns/3", headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: campaigns.get_metadata"
+    assert response.json == expected
 
 
 def test_change_campaign_status(client, app, db, mocker):

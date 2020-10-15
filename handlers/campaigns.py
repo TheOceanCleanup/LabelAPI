@@ -34,9 +34,17 @@ def get_metadata(campaign_id):
     """
     GET /campaigns/{campaign_id}
 
-    /campaigns/{campaign_id}
+    Get the metadata of a given campaign
     """
-    return "Not Implemented: campaigns.get_metadata"
+    # Check if logged in user has correct permissions
+    if not flask_login.current_user.has_role('image-admin'):
+        abort(401)
+
+    campaign = Campaign.query.get(campaign_id)
+    if campaign is None:
+        abort(404)
+
+    return campaign.to_dict()
 
 
 @flask_login.login_required
