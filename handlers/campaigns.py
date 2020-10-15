@@ -1,4 +1,5 @@
 from common.auth import flask_login
+from models.campaign import Campaign
 
 
 @flask_login.login_required
@@ -8,7 +9,24 @@ def list_campaigns(page=1, per_page=10):
 
     List all the labeling campaigns in the database
     """
-    return "Not Implemented: campaigns.list_campaigns"
+    # Check if logged in user has correct permissions
+    if not flask_login.current_user.has_role('image-admin'):
+        abort(401)
+
+    campaigns = Campaign.query.order_by(Campaign.id)\
+                .paginate(page=page, per_page=per_page)
+    print(campaigns)
+    return {
+        'pagination': {
+            'page': campaigns.page,
+            'pages': campaigns.page,
+            'total': campaigns.total,
+            'per_page': campaigns.per_page,
+            'prev': (campaigns.prev_num if campaigns.has_prev else None),
+            'next': (campaigns.next_num if campaigns.has_next else None)
+        },
+        'campaigns': [x.to_dict() for x in campaigns.items]
+    }
 
 
 @flask_login.login_required

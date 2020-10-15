@@ -1,25 +1,134 @@
-from tests.shared import get_headers
+from tests.shared import get_headers, add_user, add_imagesets, add_images, \
+    add_campaigns, add_image_to_campaign, add_object
+import datetime
 
 
 def test_list_campaigns(client, app, db, mocker):
     headers = get_headers(db)
 
-    # TODO: add some campaigns to DB
+    now = datetime.datetime.now()
+    yesterday = now - datetime.timedelta(days=1)
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
+    campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
+    ci1 = add_image_to_campaign(db, img1, campaign3)
+    ci2 = add_image_to_campaign(db, img1, campaign3)
+    ci2.labeled = False
+    db.session.commit()
+
+    expected = {
+        "pagination": {
+            "page": 1,
+            "pages": 1,
+            "total": 3,
+            "per_page": 10,
+            "next": None,
+            "prev": None
+        },
+        "campaigns": [
+            {
+                "campaign_id": 1,
+                "title": "Some Campaign",
+                "status": "finished",
+                "progress": {
+                    "total": 0,
+                    "done": 0
+                },
+                "metadata": {"key": "value"},
+                "label_translations": {"PET": "plastic"},
+                "date_created": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "date_started": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "date_completed": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "date_finished": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "created_by": "someone@example.com"
+            },
+            {
+                "campaign_id": 2,
+                "title": "Some other Campaign",
+                "status": "finished",
+                "progress": {
+                    "total": 0,
+                    "done": 0
+                },
+                "metadata": None,
+                "label_translations": None,
+                "date_created": yesterday.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "date_started": yesterday.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "date_completed": yesterday.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "date_finished": yesterday.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "created_by": "someone@example.com"
+            },
+            {
+                "campaign_id": 3,
+                "title": "A third Campaign",
+                "status": "active",
+                "progress": {
+                    "total": 2,
+                    "done": 1
+                },
+                "metadata": None,
+                "label_translations": None,
+                "date_created": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "date_started": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "date_completed": None,
+                "date_finished": None,
+                "created_by": "someone@example.com"
+            },
+        ]
+    }
 
     response = client.get("/api/v1/campaigns", headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: campaigns.list_campaigns"
+    assert response.json == expected
 
 
 def test_list_campaigns_pagination(client, app, db, mocker):
     headers = get_headers(db)
 
-    # TODO: add some campaigns to DB
+    now = datetime.datetime.now()
+    yesterday = now - datetime.timedelta(days=1)
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
+    campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
+    ci1 = add_image_to_campaign(db, img1, campaign3)
+    ci2 = add_image_to_campaign(db, img1, campaign3)
+    ci2.labeled = False
+    db.session.commit()
 
-    response = client.get(
-        "/api/v1/campaigns?page=2&per_page=2", headers=headers)
+    expected = {
+        "pagination": {
+            "page": 2,
+            "pages": 2,
+            "total": 3,
+            "per_page": 2,
+            "next": None,
+            "prev": 1
+        },
+        "campaigns": [
+            {
+                "campaign_id": 3,
+                "title": "A third Campaign",
+                "status": "active",
+                "progress": {
+                    "total": 2,
+                    "done": 1
+                },
+                "metadata": None,
+                "label_translations": None,
+                "date_created": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "date_started": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "date_completed": None,
+                "date_finished": None,
+                "created_by": "someone@example.com"
+            },
+        ]
+    }
+
+    response = client.get("/api/v1/campaigns?page=2&per_page=2", headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: campaigns.list_campaigns"
+    assert response.json == expected
 
 
 def test_new_campaign(client, app, db, mocker):

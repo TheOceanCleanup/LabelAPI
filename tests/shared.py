@@ -127,7 +127,7 @@ def add_campaigns(db, user, now, yesterday):
             "key": "value"
         },
         status="finished",
-        label_translations={'PET': 'plastic'},
+        label_translations={"PET": "plastic"},
         date_created=now,
         date_started=now,
         date_completed=now,
