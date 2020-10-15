@@ -10,7 +10,7 @@ port = 5005
 @pytest.fixture
 def app():
     os.environ["DB_CONNECTION_STRING"] = \
-        'postgresql://toc:toc_password@localhost:5433/toc_test'
+        'postgresql://toc:toc_pswd@localhost:5433/toc_test'
 
     app = App().app
     with app.app_context():

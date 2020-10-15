@@ -18,7 +18,7 @@ class App:
 
         app = connexion.FlaskApp(
             __name__,
-            specification_dir='../'
+            specification_dir='.'
         )
         app.app.config['SQLALCHEMY_DATABASE_URI'] = \
             os.environ.get('DB_CONNECTION_STRING')
