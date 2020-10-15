@@ -12,6 +12,7 @@ class User(db.Model, flask_login.UserMixin):
     public_key = db.Column(db.Text, unique=True, nullable=True)
     API_KEY = db.Column(db.String(100), nullable=True)
     API_SECRET = db.Column(BYTEA, nullable=True)
+    enabled = db.Column(db.Boolean, nullable=False, default=True)
 
     campaigns = db.relationship("Campaign", back_populates="created_by")
     imagesets = db.relationship("ImageSet", back_populates="created_by")
@@ -24,6 +25,9 @@ class User(db.Model, flask_login.UserMixin):
     def validate_email(self, key, value):
         assert value != ''
         return value
+
+    def is_active(self):
+        return self.enabled
 
     def check_password(self, api_secret):
         return bcrypt.checkpw(api_secret.encode(), self.API_SECRET)

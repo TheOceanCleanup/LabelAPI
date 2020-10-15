@@ -12,7 +12,8 @@ def request_loader(request):
 
     # Validate key against DB, return user
     user = db.session.query(User).filter_by(API_KEY=api_key).first()
-    if user is not None and api_secret and user.check_password(api_secret):
+    if user is not None and api_secret and user.is_active() \
+            and user.check_password(api_secret):
         return user
 
     return None  # Not a User or invalid key, return None == Unauthenticated
