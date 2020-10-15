@@ -31,10 +31,6 @@ class Campaign(db.Model):
         "CampaignImage",
         back_populates="campaign"
     )
-    attached_roles = db.relationship(
-        "Role",
-        back_populates="subject"
-    )
 
     def __repr__(self):
         return '<Campaign %r>' % self.title

@@ -11,7 +11,7 @@ def list_imagesets(page=1, per_page=10):
     Return list of image sets
     """
     # Check if logged in user has correct permissions
-    if not flask_login.current_user.is_image_admin():
+    if not flask_login.current_user.has_role('image-admin'):
         abort(401)
 
     imagesets = ImageSet.query\
@@ -47,7 +47,7 @@ def change_status(imageset_id, body):
     Change the status of an image set
     """
     # Check if logged in user has correct permissions
-    if not flask_login.current_user.is_image_admin():
+    if not flask_login.current_user.has_role('image-admin'):
         abort(401)
 
     imageset = ImageSet.query.get(imageset_id)
@@ -72,7 +72,7 @@ def get_images(imageset_id, page=1, per_page=10):
     List all the images in the image set, as ID and download path.
     """
     # Check if logged in user has correct permissions
-    if not flask_login.current_user.is_image_admin():
+    if not flask_login.current_user.has_role('image-admin'):
         abort(401)
 
     imageset = ImageSet.query.get(imageset_id)
@@ -103,7 +103,7 @@ def add_images(imageset_id, body):
     Note: Can only add to "created" status set
     """
     # Check if logged in user has correct permissions
-    if not flask_login.current_user.is_image_admin():
+    if not flask_login.current_user.has_role('image-admin'):
         abort(401)
 
     imageset = ImageSet.query.get(imageset_id)

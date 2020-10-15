@@ -58,6 +58,9 @@ def add_campaign(body):
     POST /campaigns
 
     Create a new campaign
+
+    Note: Check if user already exists. If so use that. Check also if user
+    already has a key. If not, create.
     """
     return "Not Implemented: campaigns.add_campaign"
 

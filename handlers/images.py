@@ -11,7 +11,7 @@ def list_images(page=1, per_page=10):
     List all images
     """
     # Check if logged in user has correct permissions
-    if not flask_login.current_user.is_image_admin():
+    if not flask_login.current_user.has_role('image-admin'):
         abort(401)
 
     images = Image.query.order_by(Image.id).paginate(page=page, per_page=per_page)
