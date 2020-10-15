@@ -1,6 +1,6 @@
 import datetime
-from tests.shared import get_headers, add_user, add_imagesets, add_images
-
+from tests.shared import get_headers, add_user, add_imagesets, add_images, \
+    add_campaigns, add_image_to_campaign, add_object
 
 def test_list_images(client, app, db, mocker):
     headers = get_headers(db)
@@ -142,37 +142,325 @@ def test_list_images_pagination(client, app, db, mocker):
     assert response.json == expected
 
 
-def test_list_objects_in_image_simple(client, app, db, mocker):
+def test_list_objects_in_image_prioritize_default_match_in_first(client, app,
+        db, mocker):
+    """
+    In this test case, we add objects to an image in both campaign 1 and
+    campaign 2. We expect to get the return only from campaign 1, as the
+    date_finished is newer than campaign 2.
+    """
     headers = get_headers(db)
 
-    # TODO: add images, campaigns, objects to DB
+    now = datetime.datetime.now()
+    yesterday = now - datetime.timedelta(days=1)
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
+    campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
+    ci1 = add_image_to_campaign(db, img1, campaign1)
+    ci2 = add_image_to_campaign(db, img1, campaign2)
+    obj1 = add_object(db, now, ci1, 'label1', None, None, [1,2,3,4])
+    obj2 = add_object(db, now, ci1, 'label2', None, None, [2,3,4,5])
+    obj3 = add_object(db, now, ci2, 'label3', None, None, [2,3,4,5])
+    obj4 = add_object(db, now, ci2, 'label4', None, None, [1,4,8,16])
+
+    expected = [
+        {
+            "object_id": obj1.id,
+            "image_id": 1,
+            "campaign_id": 1,
+            "label": "label1",
+            "bounding_box": {
+                "xmin": 1,
+                "xmax": 2,
+                "ymin": 3,
+                "ymax": 4
+            },
+            "confidence": None,
+            "date_added": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        },
+        {
+            "object_id": obj2.id,
+            "image_id": 1,
+            "campaign_id": 1,
+            "label": "label2",
+            "bounding_box": {
+                "xmin": 2,
+                "xmax": 3,
+                "ymin": 4,
+                "ymax": 5
+            },
+            "confidence": None,
+            "date_added": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        }
+    ]
 
     response = client.get("/api/v1/images/1/objects", headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: images.get_objects"
+    assert response.json == expected
 
 
-def test_list_objects_in_image_prioritize_default(client, app, db, mocker):
+def test_list_objects_in_image_prioritize_default_match_not_in_first(client,
+        app, db, mocker):
+    """
+    In this test case, we add objects to an image only in campaign 2. The
+    image is not part of campaign 1. We expect to get the return from
+    campaign 2.
+    """
     headers = get_headers(db)
 
-    # TODO: add images, campaigns, objects to DB. Use multiple campaigns with
-    #       prioritization
+    now = datetime.datetime.now()
+    yesterday = now - datetime.timedelta(days=1)
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
+    campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
+    ci2 = add_image_to_campaign(db, img1, campaign2)
+    obj3 = add_object(db, now, ci2, 'label3', None, None, [2,3,4,5])
+    obj4 = add_object(db, now, ci2, 'label4', None, None, [1,4,8,16])
+
+    expected = [
+        {
+            "object_id": obj3.id,
+            "image_id": 1,
+            "campaign_id": 2,
+            "label": "label3",
+            "bounding_box": {
+                "xmin": 2,
+                "xmax": 3,
+                "ymin": 4,
+                "ymax": 5
+            },
+            "confidence": None,
+            "date_added": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        },
+        {
+            "object_id": obj4.id,
+            "image_id": 1,
+            "campaign_id": 2,
+            "label": "label4",
+            "bounding_box": {
+                "xmin": 1,
+                "xmax": 4,
+                "ymin": 8,
+                "ymax": 16
+            },
+            "confidence": None,
+            "date_added": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        }
+    ]
 
     response = client.get("/api/v1/images/1/objects", headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: images.get_objects"
+    assert response.json == expected
 
 
-def test_list_objects_in_image_prioritize_provided(client, app, db, mocker):
+def test_list_objects_in_image_prioritize_provided_match_in_first(client, app,
+        db, mocker):
+    """
+    In this test case, we add objects to an image in both campaign 1 and
+    campaign 2. We then ask to get the return for campaign 2, and only if there
+    is none from campaign 1. We expect to get the objects added in campaign 2,
+    not campaign 1.
+    """
     headers = get_headers(db)
 
-    # TODO: add images, campaigns, objects to DB. Use multiple campaigns with
-    #       prioritization
+    now = datetime.datetime.now()
+    yesterday = now - datetime.timedelta(days=1)
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
+    campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
+    ci1 = add_image_to_campaign(db, img1, campaign1)
+    ci2 = add_image_to_campaign(db, img1, campaign2)
+    obj1 = add_object(db, now, ci1, 'label1', None, None, [1,2,3,4])
+    obj2 = add_object(db, now, ci1, 'label2', None, None, [2,3,4,5])
+    obj3 = add_object(db, now, ci2, 'label3', None, None, [2,3,4,5])
+    obj4 = add_object(db, now, ci2, 'label4', None, None, [1,4,8,16])
 
-    response = client.get(
-        "/api/v1/images/1/objects?campaigns=2,3,1", headers=headers)
+    expected = [
+        {
+            "object_id": obj3.id,
+            "image_id": 1,
+            "campaign_id": 2,
+            "label": "label3",
+            "bounding_box": {
+                "xmin": 2,
+                "xmax": 3,
+                "ymin": 4,
+                "ymax": 5
+            },
+            "confidence": None,
+            "date_added": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        },
+        {
+            "object_id": obj4.id,
+            "image_id": 1,
+            "campaign_id": 2,
+            "label": "label4",
+            "bounding_box": {
+                "xmin": 1,
+                "xmax": 4,
+                "ymin": 8,
+                "ymax": 16
+            },
+            "confidence": None,
+            "date_added": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        }
+    ]
+
+    response = client.get("/api/v1/images/1/objects?campaigns=2,1",
+        headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: images.get_objects"
+    assert response.json == expected
+
+
+def test_list_objects_in_image_prioritize_provided_match_not_in_first(client,
+        app, db, mocker):
+    """
+    In this test case, we add objects to an image in only campaign 1. Campaign 3
+    is set to unlabeled. We then ask to get the return for campaign 3, and only
+    if there is none from campaign 1. We expect to get the objects added in
+    campaign 1, as there are none from campaign 3.
+    """
+    headers = get_headers(db)
+
+    now = datetime.datetime.now()
+    yesterday = now - datetime.timedelta(days=1)
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
+    campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
+    ci1 = add_image_to_campaign(db, img1, campaign1)
+    ci2 = add_image_to_campaign(db, img1, campaign3)
+    obj1 = add_object(db, now, ci1, 'label1', None, None, [1,2,3,4])
+    obj2 = add_object(db, now, ci1, 'label2', None, None, [2,3,4,5])
+
+    ci2.labeled = False
+    db.session.commit()
+
+    expected = [
+        {
+            "object_id": obj1.id,
+            "image_id": 1,
+            "campaign_id": 1,
+            "label": "label1",
+            "bounding_box": {
+                "xmin": 1,
+                "xmax": 2,
+                "ymin": 3,
+                "ymax": 4
+            },
+            "confidence": None,
+            "date_added": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        },
+        {
+            "object_id": obj2.id,
+            "image_id": 1,
+            "campaign_id": 1,
+            "label": "label2",
+            "bounding_box": {
+                "xmin": 2,
+                "xmax": 3,
+                "ymin": 4,
+                "ymax": 5
+            },
+            "confidence": None,
+            "date_added": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        }
+    ]
+
+    response = client.get("/api/v1/images/1/objects?campaigns=3,1",
+        headers=headers)
+    assert response.status_code == 200
+    assert response.json == expected
+
+
+def test_list_objects_in_image_prioritize_provided_no_match(client, app, db,
+        mocker):
+    """
+    In this test case, we add objects to an image in campaign 2. We then ask to
+    get the images specifying only campaign 1. We expect to get no objects.
+    """
+    headers = get_headers(db)
+
+    now = datetime.datetime.now()
+    yesterday = now - datetime.timedelta(days=1)
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
+    campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
+    ci1 = add_image_to_campaign(db, img1, campaign1)
+    ci2 = add_image_to_campaign(db, img1, campaign2)
+    obj3 = add_object(db, now, ci2, 'label3', None, None, [2,3,4,5])
+    obj4 = add_object(db, now, ci2, 'label4', None, None, [1,4,8,16])
+
+    expected = []
+
+    response = client.get("/api/v1/images/1/objects?campaigns=1",
+        headers=headers)
+    assert response.status_code == 200
+    assert response.json == expected
+
+
+def test_list_objects_in_image_prioritize_default_match_in_first_not_finished(
+        client, app, db, mocker):
+    """
+    In this test case, we add objects to an image in campaign 2 and campaign 3.
+    We then ask to get the return without specifying the campaigns. We expect
+    to get the objects added in campaign 2, as campaign 3 is not in finished
+    state.
+    """
+    headers = get_headers(db)
+
+    now = datetime.datetime.now()
+    yesterday = now - datetime.timedelta(days=1)
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
+    campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
+    ci1 = add_image_to_campaign(db, img1, campaign3)
+    ci2 = add_image_to_campaign(db, img1, campaign2)
+    obj1 = add_object(db, now, ci1, 'label1', None, None, [1,2,3,4])
+    obj2 = add_object(db, now, ci1, 'label2', None, None, [2,3,4,5])
+    obj3 = add_object(db, now, ci2, 'label3', None, None, [2,3,4,5])
+    obj4 = add_object(db, now, ci2, 'label4', None, None, [1,4,8,16])
+
+    expected = [
+        {
+            "object_id": obj3.id,
+            "image_id": 1,
+            "campaign_id": 2,
+            "label": "label3",
+            "bounding_box": {
+                "xmin": 2,
+                "xmax": 3,
+                "ymin": 4,
+                "ymax": 5
+            },
+            "confidence": None,
+            "date_added": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        },
+        {
+            "object_id": obj4.id,
+            "image_id": 1,
+            "campaign_id": 2,
+            "label": "label4",
+            "bounding_box": {
+                "xmin": 1,
+                "xmax": 4,
+                "ymin": 8,
+                "ymax": 16
+            },
+            "confidence": None,
+            "date_added": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+        }
+    ]
+
+    response = client.get("/api/v1/images/1/objects",
+        headers=headers)
+    assert response.status_code == 200
+    assert response.json == expected
 
 
 def test_images_get_link_with_campaign_key(client, app, db, mocker):

@@ -275,8 +275,8 @@ paths:
             objects. If multiple are provided, objects are returned for the
             first campaign in the list for which objects exist for this image -
             meaning only the objects from exactly one campaign will ever be
-            returned. If no campaign is provided, objects from any campaign
-            will be returned, prioritized by the most recent campaign.
+            returned. If no campaign is provided, objects from any finished
+            campaign will be returned, prioritized by the most recent campaign.
           schema:
             type: array
             items:

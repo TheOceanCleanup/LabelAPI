@@ -61,6 +61,45 @@ class Image(db.Model):
             }
         }
 
+    def get_objects(self, campaigns=[]):
+        """
+        Get the objects in this image. If these exist for multiple  campaigns,
+        priotize them either by the provided campaigns (in that order) or by
+        date of the latest campaign otherwise. In the second case, only labels
+        from finished campaigns will be returned.
+
+        :param campaigns:   List of campaign objects to find the objects for,
+                            in order.
+        :returns:           List of objects in the image
+        """
+        # Find campaign_image relevant here
+        campaign_image = None
+        if len(campaigns) > 0:
+            for campaign in campaigns:
+                # Check if there is a campaign_image object like this, and if
+                # it has attached objects
+                for ci in self.campaign_images:
+                    if ci.campaign == campaign and ci.labeled:
+                        campaign_image = ci
+                        break
+                if campaign_image is not None:
+                    break
+        else:
+            # Find the most recent finished campaign
+            finished_campaign_images = [
+                x for x in self.campaign_images
+                if x.campaign.status == 'finished'
+            ]
+            if len(finished_campaign_images) > 0:
+                campaign_image = sorted(finished_campaign_images,
+                                        key=lambda x: x.campaign.date_finished,
+                                        reverse=True)[0]
+
+        if campaign_image is not None:
+            return sorted(campaign_image.objects, key=lambda x: x.id)
+        else:
+            return []
+
 
 class ImageSet(db.Model):
     __tablename__ = "imageset"

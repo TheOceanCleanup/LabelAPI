@@ -1,5 +1,7 @@
 from models.user import User, Role
 from models.image import Image, ImageSet
+from models.campaign import Campaign, CampaignImage
+from models.object import Object
 import bcrypt
 
 
@@ -115,3 +117,72 @@ def add_images(db, imgset, now):
     db.session.add(img2)
     db.session.add(img3)
     return img1, img2, img3
+
+
+def add_campaigns(db, user, now, yesterday):
+    campaign1 = Campaign(
+        id=1,
+        title="Some Campaign",
+        meta_data={
+            "key": "value"
+        },
+        status="finished",
+        label_translations={'PET': 'plastic'},
+        date_created=now,
+        date_started=now,
+        date_completed=now,
+        date_finished=now,
+        created_by=user
+    )
+    campaign2 = Campaign(
+        id=2,
+        title="Some other Campaign",
+        status="finished",
+        date_created=yesterday,
+        date_started=yesterday,
+        date_completed=yesterday,
+        date_finished=yesterday,
+        created_by=user
+    )
+    campaign3 = Campaign(
+        id=3,
+        title="A third Campaign",
+        status="active",
+        date_created=now,
+        date_started=now,
+        date_completed=None,
+        date_finished=None,
+        created_by=user
+    )
+    db.session.add(campaign1)
+    db.session.add(campaign2)
+    db.session.add(campaign3)
+    db.session.commit()
+    return campaign1, campaign2, campaign3
+
+
+def add_image_to_campaign(db, image, campaign):
+    campaign_image = CampaignImage(
+        campaign=campaign,
+        image=image,
+        labeled=True
+    )
+    db.session.add(campaign_image)
+    db.session.commit()
+    return campaign_image
+
+def add_object(db, now, campaign_image, label, label_translated, confidence, bbox):
+    obj = Object(
+        campaign_image=campaign_image,
+        label_translated=label_translated if label_translated is not None else label,
+        label_original=label,
+        confidence=confidence,
+        x_min=bbox[0],
+        x_max=bbox[1],
+        y_min=bbox[2],
+        y_max=bbox[3],
+        date_added=now
+    )
+    db.session.add(obj)
+    db.session.commit()
+    return obj

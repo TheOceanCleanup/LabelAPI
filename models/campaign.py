@@ -61,7 +61,7 @@ class CampaignImage(db.Model):
                             nullable=False)
     image_id = db.Column(db.Integer, db.ForeignKey('image.id'),
                          nullable=False)
-    labeled = db.Column(db.Boolean, nullable=False, default=True)
+    labeled = db.Column(db.Boolean, nullable=False, default=False)
 
     campaign = db.relationship(
         "Campaign",
