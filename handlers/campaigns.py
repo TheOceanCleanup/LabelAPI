@@ -58,14 +58,47 @@ def change_status(campaign_id, body):
 
 
 @flask_login.login_required
-def get_objects(campaign_id):
+def get_objects(campaign_id, page=1, per_page=1000):
     """
     GET /campaigns/{campaign_id}/objects
 
     Get a list of all images in a campaign, a download link for the image and
     the objects found in that image.
     """
-    return "Not Implemented: campaigns.get_objects"
+    # Check if logged in user has correct permissions.
+    if not flask_login.current_user.has_role('image-admin'):
+        abort(401)
+
+    campaign = Campaign.query.get(campaign_id)
+    if campaign is None:
+        abort(404)
+
+    # Access to campaign images through query, to allow for pagination
+    c_images = CampaignImage.query\
+               .filter(CampaignImage.campaign_id == campaign.id)\
+               .order_by(CampaignImage.id)\
+               .paginate(page=page, per_page=per_page)
+    return {
+        'pagination': {
+            'page': c_images.page,
+            'pages': c_images.page,
+            'total': c_images.total,
+            'per_page': c_images.per_page,
+            'prev': (c_images.prev_num if c_images.has_prev else None),
+            'next': (c_images.next_num if c_images.has_next else None)
+        },
+        'images': [
+            {
+                "image_id": x.image.id,
+                "url": x.image.get_api_url(),
+                "objects": [
+                    y.to_dict()
+                    for y in sorted(x.objects, key=lambda y: y.id)
+                ]
+            }
+            for x in c_images.items
+        ]
+    }
 
 
 @flask_login.login_required

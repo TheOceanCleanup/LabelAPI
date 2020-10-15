@@ -13,6 +13,12 @@ def create_basic_testset(db):
     ci1 = add_image_to_campaign(db, img1, campaign3)
     ci2 = add_image_to_campaign(db, img2, campaign3)
     ci3 = add_image_to_campaign(db, img3, campaign1)
+
+    obj1 = add_object(db, now, ci1, 'label1', None, None, [1,2,3,4])
+    obj2 = add_object(db, now, ci1, 'label2', None, None, [2,3,4,5])
+    obj3 = add_object(db, now, ci2, 'label3', 'translated_label3', 0.87,
+        [6,7,8,9])
+
     ci2.labeled = False
     db.session.commit()
     return now, yesterday
@@ -248,10 +254,79 @@ def test_add_images_to_campaign_mixed(client, app, db, mocker):
 def test_get_objects_in_campaign(client, app, db, mocker):
     headers = get_headers(db)
 
-    # TODO: add some campaigns, images and objects to DB
-    response = client.get("/api/v1/campaigns/1/objects", headers=headers)
+    now, yesterday = create_basic_testset(db)
+
+
+    expected = {
+        "pagination": {
+            "page": 1,
+            "pages": 1,
+            "total": 2,
+            "per_page": 1000,
+            "next": None,
+            "prev": None
+        },
+        "images": [
+            {
+                "image_id": 1,
+                "url": "/images/1",
+                "objects": [
+                    {
+                        "object_id": 1,
+                        "image_id": 1,
+                        "campaign_id": 3,
+                        "label": "label1",
+                        "bounding_box": {
+                            "xmin": 1,
+                            "xmax": 2,
+                            "ymin": 3,
+                            "ymax": 4
+                        },
+                        "confidence": None,
+                        "date_added": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+                    },
+                    {
+                        "object_id": 2,
+                        "image_id": 1,
+                        "campaign_id": 3,
+                        "label": "label2",
+                        "bounding_box": {
+                            "xmin": 2,
+                            "xmax": 3,
+                            "ymin": 4,
+                            "ymax": 5
+                        },
+                        "confidence": None,
+                        "date_added": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+                    }
+                ]
+            },
+            {
+                "image_id": 2,
+                "url": "/images/2",
+                "objects": [
+                    {
+                        "object_id": 3,
+                        "image_id": 2,
+                        "campaign_id": 3,
+                        "label": "translated_label3",
+                        "bounding_box": {
+                            "xmin": 6,
+                            "xmax": 7,
+                            "ymin": 8,
+                            "ymax": 9
+                        },
+                        "confidence": 0.87,
+                        "date_added": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+                    }
+                ]
+            }
+        ]
+    }
+    
+    response = client.get("/api/v1/campaigns/3/objects", headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: campaigns.get_objects"
+    assert response.json == expected
 
 
 def test_get_images_in_campaign_with_campaign_key(client, app, db, mocker):
