@@ -1,6 +1,6 @@
 from common.db import db
 from sqlalchemy.dialects.postgresql import JSONB
-from models.user import Role
+from models.user import User, Role
 
 
 class Campaign(db.Model):
@@ -54,7 +54,7 @@ class Campaign(db.Model):
             'created_by': self.created_by.email
         }
 
-    def give_labeler_access(self, user):
+    def give_labeler_access(self, user, commit=True):
         role = Role(
             role='labeler',
             user=user,
@@ -62,8 +62,58 @@ class Campaign(db.Model):
             subject_id=self.id
         )
         db.session.add(role)
-        db.session.commit()
+        if commit:
+            db.session.commit()
         return True
+
+    @staticmethod
+    def create(labeler_email, title, created_by, metadata=None,
+            label_translations=None):
+        """
+        Create a new campaign, adding the correct users and roles where
+        applicable.
+
+        #TODO: Do we need to add some exception / rollback here?
+
+        :param labeler_email:       E mail address for the labeler user
+        :param title:               Title for the campaign. Should be unique
+        :param created_by:          User that is creating this campaign
+        :param metadata:            Metadata to store with the campaign
+        :param label_translations:  Translations between labelers and internal
+                                    labels
+        :returns:                   Campaign metadata dict, expanded with the
+                                    (possibly generated) cretentials
+        """
+        # Find if a user already exists, otherwise create it
+        user = User.find_or_create(labeler_email, commit=False)
+
+        # Check if the user already has an API key
+        if user.API_KEY is not None:
+            key = user.API_KEY
+            secret = None
+        else:
+            key, secret = user.generate_api_key()
+
+        # Create campaign itself
+        campaign = Campaign(
+            title=title,
+            meta_data=metadata,
+            label_translations=label_translations,
+            created_by=created_by
+        )
+        db.session.add(campaign)
+
+        # Add role to user that gives access to the campaign
+        campaign.give_labeler_access(user, commit=False)
+
+        db.session.commit()
+
+        response = campaign.to_dict()
+        response['access_token'] = {
+            "apikey": key,
+            "apisecret": secret
+        }
+        return response
 
 
 class CampaignImage(db.Model):

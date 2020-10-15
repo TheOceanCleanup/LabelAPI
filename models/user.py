@@ -56,12 +56,13 @@ class User(db.Model, flask_login.UserMixin):
         return api_key, api_secret
 
     @staticmethod
-    def find_or_create(email):
+    def find_or_create(email, commit=True):
         user = User.query.filter(User.email == email).first()
         if user is None:
             user = User(email=email)
             db.session.add(user)
-            db.session.commit()
+            if commit:
+                db.session.commit()
 
         return user
 

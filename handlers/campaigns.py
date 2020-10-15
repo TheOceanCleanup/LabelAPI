@@ -163,32 +163,14 @@ def add_campaign(body):
     if Campaign.query.filter(Campaign.title == body['title']).first() is not None:
         abort(409, "Another campaign with this name already exists")
 
-    # Find if a user already exists, otherwise create it
-    user = User.find_or_create(body['labeler_email'])
-
-    # Check if the user already has an API key
-    if user.API_KEY is not None:
-        key = user.API_KEY
-        secret = None
-    else:
-        key, secret = user.generate_api_key()
-
-    # Create campaign itself
-    campaign = Campaign(
-        title=body['title'],
-        meta_data=body.get('metadata', None),
-        label_translations=body.get('label_translations', None),
-        created_by=flask_login.current_user
+    response = Campaign.create(
+        body['labeler_email'],
+        body['title'],
+        flask_login.current_user,
+        metadata=body.get('metadata', None),
+        label_translations=body.get('label_translations', None)
     )
 
-    # Add role to user that gives access to the campaign
-    campaign.give_labeler_access(user)
-
-    response = campaign.to_dict()
-    response['access_token'] = {
-        "apikey": key,
-        "apisecret": secret
-    }
     return response
 
 
