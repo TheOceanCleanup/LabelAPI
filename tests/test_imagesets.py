@@ -1,5 +1,6 @@
 import datetime
 from tests.shared import get_headers, add_user, add_imagesets, add_images
+from models.image import ImageSet
 
 
 def test_list_imagesets(client, app, db, mocker):
@@ -111,10 +112,79 @@ def test_new_imageset(client, app, db, mocker):
             }
         }
     }
+
+    mocker.patch(
+        "models.image.AzureWrapper.create_folder",
+        return_value="/some/folder/path"
+    )
+
+    expected = {
+        "imageset_id": 1,
+        "title": "Some test set",
+        "status": "created",
+        "metadata": {
+            "field1": "value1",
+            "field2": {
+                "subfield1": "value2",
+                "subfield2": 3
+            },
+        },
+        "blobstorage_path": "/some/folder/path",
+        "date_finished": None,
+        "created_by": "test@example.com"
+    }
+
     response = client.post(
         "/api/v1/image_sets", json=json_payload, headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: image_sets.add_imageset"
+
+    # As date is filled by DB, testing for equality is not possible. Remove and
+    # test after
+    resp_no_date = response.json
+    del resp_no_date["date_created"]
+
+    assert response.json == expected
+
+
+def test_new_imageset_already_exists(client, app, db, mocker):
+    headers = get_headers(db)
+
+    user = add_user(db)
+    add_imagesets(db, user, datetime.datetime.now())
+
+    json_payload = {
+        'title': 'some other image set'
+    }
+
+    response = client.post(
+        "/api/v1/image_sets", json=json_payload, headers=headers)
+
+    assert response.status_code == 409
+
+def test_new_imageset_azure_failure(client, app, db, mocker):
+    headers = get_headers(db)
+    json_payload = {
+        'title': 'Some test set',
+        'metadata': {
+            'field1': 'value1',
+            'field2': {
+                'subfield1': 'value2',
+                'subfield2': 3
+            }
+        }
+    }
+
+    mocker.patch(
+        "models.image.AzureWrapper.create_folder",
+        return_value=False
+    )
+
+    response = client.post(
+        "/api/v1/image_sets", json=json_payload, headers=headers)
+    assert response.status_code == 500
+
+    # Verify the image set was not added to the database
+    assert db.session.query(ImageSet).count() == 0
 
 
 def test_change_imageset_status(client, app, db, mocker):

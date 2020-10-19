@@ -68,3 +68,53 @@ class AzureWrapper:
             protocol="https",
             sas_token=token
         )
+
+    @staticmethod
+    def create_folder(foldername):
+        """
+        Create a new folder in the upload container. Requires
+        that the Azure datastore connection string is available in the
+        environment.
+
+        Given that the concept of an directory does not exist in Azure
+        blobstorage, the folder is created by writing an empyt file called
+        `.` into the storage, which has the path. It will then show as folder
+        in the UI.
+
+        Requires the following environment variables to be set:
+        AZURE_STORAGE_CONNECTION_STRING
+        AZURE_STORAGE_IMAGESET_CONTAINER
+        AZURE_STORAGE_IMAGESET_FOLDER
+
+        :params foldername: Name to give the folder
+        :returns:           Boolean indicating creation success.
+        """
+        assert "AZURE_STORAGE_CONNECTION_STRING" in os.environ
+        assert "AZURE_STORAGE_IMAGESET_CONTAINER" in os.environ
+        assert "AZURE_STORAGE_IMAGESET_FOLDER" in os.environ
+
+        block_blob_service = BlockBlobService(
+            connection_string=os.environ["AZURE_STORAGE_CONNECTION_STRING"]
+        )
+
+        folderpath = '/'.join([
+            os.environ["AZURE_STORAGE_IMAGESET_FOLDER"],
+            'imageset_' + foldername
+        ])
+
+        try:
+            block_blob_service.create_blob_from_text(
+                container_name=os.environ["AZURE_STORAGE_IMAGESET_CONTAINER"],
+                blob_name='/'.join([
+                    folderpath,
+                    'placeholder'
+                ]),
+                text=""
+            )
+        except AzureException:
+            return False
+
+        return '/'.join([
+            os.environ["AZURE_STORAGE_IMAGESET_CONTAINER"],
+            folderpath
+        ])

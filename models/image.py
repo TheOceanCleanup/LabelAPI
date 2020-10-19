@@ -77,7 +77,7 @@ class Image(db.Model):
         return AzureWrapper.get_sas_url(
             self.blobstorage_path,
             expires=datetime.utcnow() + \
-                timedelta(days=int(os.environ.get("IMAGE_TOKEN_VALID_DAYS",
+                timedelta(days=int(os.environ.get("IMAGE_READ_TOKEN_VALID_DAYS",
                                                   7))),
             permissions=["read"]
         )
@@ -238,3 +238,35 @@ class ImageSet(db.Model):
         # Now that everything is done with no errors, we can commit.
         db.session.commit()
         return True, None, None
+
+    @staticmethod
+    def create(created_by, title, metadata=None):
+        """
+        Create a new image set. Will also create the respective folder on the
+        blob storage.
+
+        :param created_by:  User that creates the set
+        :param title:       Title of the imageset
+        :param metadata:    Optional metadata dict to store with the image set.
+        :returns:           Tuple with: success (boolean), status code (int),
+                            response (msg in case of error, imageset in case of
+                            success).
+        """
+        # Check if title is still available
+        if ImageSet.query.filter(ImageSet.title == title).first() is not None:
+            return False, 409, "Image Set title is already taken"
+
+        # Create folder on blobstorage
+        created_folder = AzureWrapper.create_folder(title)
+        if not created_folder:
+            return False, 500, "Failed to create folder in Blob Storage"
+
+        imageset = ImageSet(
+            title=title,
+            meta_data=metadata,
+            blobstorage_path=created_folder,
+            created_by=created_by
+        )
+        db.session.add(imageset)
+        db.session.commit()
+        return True, 200, imageset

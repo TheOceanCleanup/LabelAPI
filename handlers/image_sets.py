@@ -37,7 +37,20 @@ def add_imageset(body):
 
     Create a new image set
     """
-    return "Not Implemented: image_sets.add_imageset"
+    # Check if logged in user has correct permissions
+    if not flask_login.current_user.has_role('image-admin'):
+        abort(401)
+
+    success, sc, response = ImageSet.create(
+        flask_login.current_user,
+        body["title"],
+        metadata=body.get("metadata", None)
+    )
+
+    if not success:
+        abort(sc, response)
+    else:
+        return response.to_dict()
 
 
 @flask_login.login_required
