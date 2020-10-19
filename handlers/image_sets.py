@@ -53,7 +53,7 @@ def change_status(imageset_id, body):
 
     imageset = ImageSet.query.get(imageset_id)
     if imageset is None:
-        abort(404)
+        abort(404, "Image Set does not exist")
 
     if imageset.change_status(body['new_status']):
         return "ok"
@@ -78,7 +78,7 @@ def get_images(imageset_id, page=1, per_page=10):
 
     imageset = ImageSet.query.get(imageset_id)
     if imageset is None:
-        abort(404)
+        abort(404, "Image Set does not exist")
 
     images = imageset.get_images_paginated(page, per_page)
     return {
@@ -109,7 +109,7 @@ def add_images(imageset_id, body):
 
     imageset = ImageSet.query.get(imageset_id)
     if imageset is None:
-        abort(404)
+        abort(404, "Image Set does not exist")
 
     success, sc, msg = imageset.add_images(body)
     if success:

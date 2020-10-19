@@ -59,7 +59,7 @@ def get_objects(image_id, campaigns=[]):
 
     image = Image.query.get(image_id)
     if image is None:
-        abort(404)
+        abort(404, "Image does not exist")
 
     # Find the campaigns requested
     campaign_objs = []

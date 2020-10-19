@@ -2,6 +2,7 @@ from common.db import db
 from sqlalchemy.dialects.postgresql import JSONB
 from models.user import User, Role
 from models.image import Image
+from models.object import Object
 
 
 class Campaign(db.Model):
@@ -77,8 +78,7 @@ class Campaign(db.Model):
                             with 'id' or as 'filepath' as sole property.
         :returns boolean:   Success or not
         :returns int:       Status code in case of failure - 404 if image does
-                            not exist, 400 if invalid request or 409 if status
-                            of campaign != created
+                            not exist or 409 if status of campaign != created
         :returns string:    Error message in case of failure
         """
         if self.status != 'created':
@@ -108,6 +108,59 @@ class Campaign(db.Model):
                 campaign_image = CampaignImage(campaign_id=self.id,
                                                image_id=image.id)
                 db.session.add(campaign_image)
+
+        # Now that everything is done with no errors, we can commit.
+        db.session.commit()
+        return True, None, None
+
+    def add_objects(self, objects):
+        """
+        Add object to this campaign. Only allow adding images if current status
+        of the campaign is "active".
+
+        :params objects:    List of images and the objects in them to add.
+        :returns boolean:   Success or not
+        :returns int:       Status code in case of failure - 404 if image does
+                            not exist (in this campaign) or 409 if status of
+                            campaign != active
+        :returns string:    Error message in case of failure
+        """
+        if self.status != 'active':
+            return False, 409, \
+                f'Not allowed to add objects while status is "{self.status}"'
+
+        for item in objects:
+            # Find campaign image.
+            for x in self.campaign_images:
+                if x.id == item['image_id']:
+                    campaign_image = x
+                    break
+            else:
+                # No object found, image not in campaign
+                db.session.rollback()
+                return False, 404, \
+                    f"Image {item['image_id']} does not exist or is " \
+                    "not part of this campaign"
+
+            # As per definition, we remove all existing labels on the
+            # current image
+            campaign_image.delete_objects(commit=False)
+
+            # Create label object and add to campaign image object. If a
+            # translated label is provided, use this as translated label.
+            # Otherwise, use the label for both.
+            for o in item['objects']:
+                o = Object(
+                    campaign_image=campaign_image,
+                    label_translated=o.get('label_translated', o['label']),
+                    label_original=o['label'],
+                    confidence=o.get('confidence'),
+                    x_min=o['bounding_box']['xmin'],
+                    x_max=o['bounding_box']['xmax'],
+                    y_min=o['bounding_box']['ymin'],
+                    y_max=o['bounding_box']['ymax']
+                )
+                db.session.add(o)
 
         # Now that everything is done with no errors, we can commit.
         db.session.commit()
@@ -197,3 +250,13 @@ class CampaignImage(db.Model):
             'image_id': self.image_id,
             'labeled': self.labeled
         }
+
+    def delete_objects(self, commit=True):
+        """
+        Delete all attached objects.
+        """
+        for o in self.objects:
+            db.session.delete(o)
+
+        if commit:
+            db.session.commit()

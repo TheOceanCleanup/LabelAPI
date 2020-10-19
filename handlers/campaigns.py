@@ -42,7 +42,7 @@ def get_metadata(campaign_id):
 
     campaign = Campaign.query.get(campaign_id)
     if campaign is None:
-        abort(404)
+        abort(404, "Campaign does not exist")
 
     return campaign.to_dict()
 
@@ -71,7 +71,7 @@ def get_objects(campaign_id, page=1, per_page=1000):
 
     campaign = Campaign.query.get(campaign_id)
     if campaign is None:
-        abort(404)
+        abort(404, "Campaign does not exist")
 
     # Access to campaign images through query, to allow for pagination
     c_images = CampaignImage.query\
@@ -121,7 +121,7 @@ def get_images(campaign_id, page=1, per_page=1000):
 
     campaign = Campaign.query.get(campaign_id)
     if campaign is None:
-        abort(404)
+        abort(404, "Campaign does not exist")
 
     # Access to campaign images through query, to allow for pagination
     c_images = CampaignImage.query\
@@ -192,7 +192,7 @@ def add_images(campaign_id, body):
 
     campaign = Campaign.query.get(campaign_id)
     if campaign is None:
-        abort(404)
+        abort(404, "Campaign does not exist")
 
     success, sc, msg = campaign.add_images(body)
     if success:
@@ -210,4 +210,23 @@ def add_objects(campaign_id, body):
 
     Note: Can only add to active set
     """
-    return "Not Implemented: campaigns.add_objects"
+    # Check if logged in user has correct permissions. Can be either
+    # image-admin or labeler on the specific campaign
+    if not (
+            flask_login.current_user.has_role('image-admin') or
+            flask_login.current_user.has_role_on_subject(
+                'labeler',
+                'campaign',
+                campaign_id)
+            ):
+        abort(401)
+
+    campaign = Campaign.query.get(campaign_id)
+    if campaign is None:
+        abort(404, "Campaign does not exist")
+
+    success, sc, msg = campaign.add_objects(body)
+    if success:
+        return "ok"
+    else:
+        abort(sc, msg)

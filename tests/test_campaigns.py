@@ -6,17 +6,19 @@ import datetime
 import bcrypt
 
 
-def create_basic_testset(db):
+def create_basic_testset(db, obj=True):
     now, yesterday, user, img1, img2, img3, campaign1, campaign2, campaign3 = \
         add_images_campaigns(db)
+
     ci1 = add_image_to_campaign(db, img1, campaign3)
     ci2 = add_image_to_campaign(db, img2, campaign3)
     ci3 = add_image_to_campaign(db, img3, campaign1)
 
-    obj1 = add_object(db, now, ci1, 'label1', None, None, [1, 2, 3, 4])
-    obj2 = add_object(db, now, ci1, 'label2', None, None, [2, 3, 4, 5])
-    obj3 = add_object(db, now, ci2, 'label3', 'translated_label3', 0.87,
-                      [6, 7, 8, 9])
+    if obj:
+        obj1 = add_object(db, now, ci1, "label1", None, None, [1, 2, 3, 4])
+        obj2 = add_object(db, now, ci1, "label2", None, None, [2, 3, 4, 5])
+        obj3 = add_object(db, now, ci2, "label3", "translated_label3", 0.87,
+                          [6, 7, 8, 9])
 
     ci2.labeled = False
     db.session.commit()
@@ -58,10 +60,10 @@ def test_list_campaigns(client, app, db, mocker):
                 },
                 "metadata": {"key": "value"},
                 "label_translations": {"PET": "plastic"},
-                "date_created": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-                "date_started": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-                "date_completed": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-                "date_finished": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "date_created": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "date_started": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "date_completed": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "date_finished": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
                 "created_by": "someone@example.com"
             },
             {
@@ -74,10 +76,10 @@ def test_list_campaigns(client, app, db, mocker):
                 },
                 "metadata": None,
                 "label_translations": None,
-                "date_created": yesterday.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-                "date_started": yesterday.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-                "date_completed": yesterday.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-                "date_finished": yesterday.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "date_created": yesterday.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "date_started": yesterday.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "date_completed": yesterday.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "date_finished": yesterday.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
                 "created_by": "someone@example.com"
             },
             {
@@ -90,8 +92,8 @@ def test_list_campaigns(client, app, db, mocker):
                 },
                 "metadata": None,
                 "label_translations": None,
-                "date_created": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-                "date_started": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "date_created": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "date_started": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
                 "date_completed": None,
                 "date_finished": None,
                 "created_by": "someone@example.com"
@@ -129,8 +131,8 @@ def test_list_campaigns_pagination(client, app, db, mocker):
                 },
                 "metadata": None,
                 "label_translations": None,
-                "date_created": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-                "date_started": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+                "date_created": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "date_started": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
                 "date_completed": None,
                 "date_finished": None,
                 "created_by": "someone@example.com"
@@ -458,8 +460,8 @@ def test_get_campaign_metadata(client, app, db, mocker):
         },
         "metadata": None,
         "label_translations": None,
-        "date_created": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-        "date_started": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
+        "date_created": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+        "date_started": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
         "date_completed": None,
         "date_finished": None,
         "created_by": "someone@example.com"
@@ -476,7 +478,7 @@ def test_change_campaign_status(client, app, db, mocker):
     # TODO: add some campaign to DB and set ID in url below
 
     json_payload = {
-        'new_status': 'active'
+        "new_status": "active"
     }
 
     response = client.put(
@@ -492,8 +494,8 @@ def test_add_images_to_campaign_by_id(client, app, db, mocker):
         add_images_campaigns(db)
 
     json_payload = [
-        {'id': 1},
-        {'id': 3}
+        {"id": 1},
+        {"id": 3}
     ]
 
     response = client.post(
@@ -514,8 +516,8 @@ def test_add_images_to_campaign_by_blobstorage_path(client, app, db, mocker):
         add_images_campaigns(db)
 
     json_payload = [
-        {'filepath': '/some/path/file1.png'},
-        {'filepath': '/some/otherpath/file3.png'}
+        {"filepath": "/some/path/file1.png"},
+        {"filepath": "/some/otherpath/file3.png"}
     ]
 
     response = client.post(
@@ -536,8 +538,8 @@ def test_add_images_to_campaign_mixed(client, app, db, mocker):
         add_images_campaigns(db)
 
     json_payload = [
-        {'filepath': '/some/path/file1.png'},
-        {'id': 3}
+        {"filepath": "/some/path/file1.png"},
+        {"id": 3}
     ]
 
     response = client.post(
@@ -558,14 +560,14 @@ def test_add_images_to_campaign_doesnt_exist(client, app, db, mocker):
         add_images_campaigns(db)
 
     json_payload = [
-        {'id': 3},
-        {'id': 10}
+        {"id": 3},
+        {"id": 10}
     ]
 
     response = client.post(
         "/api/v1/campaigns/3/images", json=json_payload, headers=headers)
     assert response.status_code == 404
-    assert response.json['detail'] == "Unknown image provided"
+    assert response.json["detail"] == "Unknown image provided"
 
     # Verify that no images where added at all
     assert len(campaign3.campaign_images) == 0
@@ -578,15 +580,15 @@ def test_add_images_to_campaign_invalid_state(client, app, db, mocker):
         add_images_campaigns(db)
 
     json_payload = [
-        {'id': 1},
-        {'id': 3}
+        {"id": 1},
+        {"id": 3}
     ]
 
     # Note campaign 2 - this has status finished
     response = client.post(
         "/api/v1/campaigns/2/images", json=json_payload, headers=headers)
     assert response.status_code == 409
-    assert response.json['detail'] == \
+    assert response.json["detail"] == \
         'Not allowed to add images while status is "finished"'
 
     # Verify that no images where added at all
@@ -624,7 +626,7 @@ def test_get_objects_in_campaign(client, app, db, mocker):
                             "ymax": 4
                         },
                         "confidence": None,
-                        "date_added": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+                        "date_added": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
                     },
                     {
                         "object_id": 2,
@@ -638,7 +640,7 @@ def test_get_objects_in_campaign(client, app, db, mocker):
                             "ymax": 5
                         },
                         "confidence": None,
-                        "date_added": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+                        "date_added": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
                     }
                 ]
             },
@@ -658,7 +660,7 @@ def test_get_objects_in_campaign(client, app, db, mocker):
                             "ymax": 9
                         },
                         "confidence": 0.87,
-                        "date_added": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ')
+                        "date_added": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ")
                     }
                 ]
             }
@@ -674,7 +676,7 @@ def test_get_images_in_campaign_with_campaign_key(client, app, db, mocker):
     now, yesterday = create_basic_testset(db)
 
     # Add labeling user on campaign 3
-    headers = add_labeler_user(db, 'campaign', 3)
+    headers = add_labeler_user(db, "campaign", 3)
 
     expected = {
         "pagination": {
@@ -707,7 +709,7 @@ def test_get_images_in_campaign_with_campaign_key_paginated(
     now, yesterday = create_basic_testset(db)
 
     # Add labeling user on campaign 3
-    headers = add_labeler_user(db, 'campaign', 3)
+    headers = add_labeler_user(db, "campaign", 3)
 
     expected = {
         "pagination": {
@@ -737,7 +739,7 @@ def test_get_images_in_campaign_with_invalid_campaign_key(
     now, yesterday = create_basic_testset(db)
 
     # Add labeling user on campaign 3
-    headers = add_labeler_user(db, 'campaign', 3)
+    headers = add_labeler_user(db, "campaign", 3)
 
     # Note the campaign id 2 in the requested link, this user has no role for
     # that
@@ -750,7 +752,7 @@ def test_images_in_campaign_with_user_key(client, app, db, mocker):
     now, yesterday = create_basic_testset(db)
 
     # Add labeling user on campaign 3. Dont use the headers though
-    add_labeler_user(db, 'campaign', 3)
+    add_labeler_user(db, "campaign", 3)
 
     expected = {
         "pagination": {
@@ -780,148 +782,376 @@ def test_images_in_campaign_with_user_key(client, app, db, mocker):
 
 def test_add_objects_to_images_in_campaign_with_campaign_key(client, app, db,
                                                              mocker):
-    headers = get_headers(db)  # TODO: Change this to campaign keys
+    now, yesterday = create_basic_testset(db, obj=False)
 
-    # TODO: add some campaigns and images to DB and set IDs below
+    # Add labeling user on campaign 3
+    headers = add_labeler_user(db, "campaign", 3)
+
+    # Set campaign 3 to active
+    campaign = Campaign.query.get(3)
+    campaign.status = "active"
+    db.session.commit()
 
     json_payload = [
         {
-            'image_id': 1,
-            'objects': [
+            "image_id": 1,
+            "objects": [
                 {
-                    'bounding_box': {
-                        'xmin': 123, 'xmax': 256, 'ymin': 187, 'ymax': 231
+                    "bounding_box": {
+                        "xmin": 123, "xmax": 256, "ymin": 187, "ymax": 231
                     },
-                    'label': "PET"
+                    "label": "PET"
                 },
                 {
-                    'bounding_box': {
-                        'xmin': 234, 'xmax': 324, 'ymin': 564, 'ymax': 765
+                    "bounding_box": {
+                        "xmin": 234, "xmax": 324, "ymin": 564, "ymax": 765
                     },
-                    'label': "Organic"
+                    "label": "Organic"
                 }
             ]
         },
         {
-            'image_id': 3,
-            'objects': [
+            "image_id": 2,
+            "objects": [
                 {
-                    'bounding_box': {
-                        'xmin': 23, 'xmax': 98, 'ymin': 1000, 'ymax': 1023
+                    "bounding_box": {
+                        "xmin": 23, "xmax": 98, "ymin": 1000, "ymax": 1023
                     },
-                    'label': "Plastic"
+                    "label": "Plastic"
                 },
                 {
-                    'bounding_box': {
-                        'xmin': 564, 'xmax': 978, 'ymin': 342, 'ymax': 675
+                    "bounding_box": {
+                        "xmin": 564, "xmax": 978, "ymin": 342, "ymax": 675
                     },
-                    'label': "Metal"
+                    "label": "Metal"
                 }
             ]
         }
     ]
 
     response = client.put(
-        "/api/v1/campaigns/1/objects", json=json_payload, headers=headers)
+        "/api/v1/campaigns/3/objects", json=json_payload, headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: campaigns.add_objects"
+
+    # Some checks to assert the right objects ended up in the right place
+    img1 = CampaignImage.query.filter(CampaignImage.image_id == 1).first()
+    img2 = CampaignImage.query.filter(CampaignImage.image_id == 2).first()
+
+    assert len(img1.objects) == 2
+    assert len(img2.objects) == 2
+
+    assert img1.objects[0].label_translated == "PET" \
+        and img1.objects[0].label_original == "PET"
+    assert img1.objects[1].label_translated == "Organic" \
+        and img1.objects[1].label_original == "Organic"
+    assert img2.objects[0].label_translated == "Plastic" \
+        and img2.objects[0].label_original == "Plastic"
+    assert img2.objects[1].label_translated == "Metal" \
+        and img2.objects[1].label_original == "Metal"
 
 
 def test_add_objects_to_images_in_campaign_with_user_key(client, app, db,
                                                          mocker):
     headers = get_headers(db)  # TODO: Change this to campaign keys
 
-    # TODO: add some campaigns and images to DB and set IDs below
+    now, yesterday = create_basic_testset(db, obj=False)
+
+    # Set campaign 3 to active
+    campaign = Campaign.query.get(3)
+    campaign.status = "active"
+    db.session.commit()
 
     json_payload = [
         {
-            'image_id': 1,
-            'objects': [
+            "image_id": 1,
+            "objects": [
                 {
-                    'bounding_box': {
-                        'xmin': 123, 'xmax': 256, 'ymin': 187, 'ymax': 231
+                    "bounding_box": {
+                        "xmin": 123, "xmax": 256, "ymin": 187, "ymax": 231
                     },
-                    'label': "PET"
+                    "label": "PET"
                 },
                 {
-                    'bounding_box': {
-                        'xmin': 234, 'xmax': 324, 'ymin': 564, 'ymax': 765
+                    "bounding_box": {
+                        "xmin": 234, "xmax": 324, "ymin": 564, "ymax": 765
                     },
-                    'label': "Organic"
+                    "label": "Organic"
+                }
+            ]
+        },
+        {
+            "image_id": 2,
+            "objects": [
+                {
+                    "bounding_box": {
+                        "xmin": 23, "xmax": 98, "ymin": 1000, "ymax": 1023
+                    },
+                    "label": "Plastic"
+                },
+                {
+                    "bounding_box": {
+                        "xmin": 564, "xmax": 978, "ymin": 342, "ymax": 675
+                    },
+                    "label": "Metal"
                 }
             ]
         }
     ]
 
     response = client.put(
-        "/api/v1/campaigns/1/objects", json=json_payload, headers=headers)
+        "/api/v1/campaigns/3/objects", json=json_payload, headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: campaigns.add_objects"
+
+    # Some checks to assert the right objects ended up in the right place
+    img1 = CampaignImage.query.filter(CampaignImage.image_id == 1).first()
+    img2 = CampaignImage.query.filter(CampaignImage.image_id == 2).first()
+
+    assert len(img1.objects) == 2
+    assert len(img2.objects) == 2
+
+    assert img1.objects[0].label_translated == "PET" \
+        and img1.objects[0].label_original == "PET"
+    assert img1.objects[1].label_translated == "Organic" \
+        and img1.objects[1].label_original == "Organic"
+    assert img2.objects[0].label_translated == "Plastic" \
+        and img2.objects[0].label_original == "Plastic"
+    assert img2.objects[1].label_translated == "Metal" \
+        and img2.objects[1].label_original == "Metal"
+
+
+def test_add_objects_to_images_in_campaign_wrong_status(client, app, db,
+                                                        mocker):
+    headers = get_headers(db)
+
+    # Inserting the default objects in this test case
+    now, yesterday = create_basic_testset(db)
+
+    # Note that we don't change the campaign status to active - it's still in
+    # created
+
+    json_payload = [
+        {
+            "image_id": 1,
+            "objects": [
+                {
+                    "bounding_box": {
+                        "xmin": 123, "xmax": 256, "ymin": 187, "ymax": 231
+                    },
+                    "label": "Plastic"
+                },
+                {
+                    "bounding_box": {
+                        "xmin": 234, "xmax": 324, "ymin": 564, "ymax": 765
+                    },
+                    "label": "Organic"
+                }
+            ]
+        }
+    ]
+
+    response = client.put(
+        "/api/v1/campaigns/3/objects", json=json_payload, headers=headers)
+    assert response.status_code == 409
 
 
 def test_add_objects_to_images_in_campaign_with_translations(client, app, db,
                                                              mocker):
     headers = get_headers(db)
+    now, yesterday = create_basic_testset(db, obj=False)
 
-    # TODO: add some campaigns and images to DB and set IDs below
+    # Set campaign 3 to active
+    campaign = Campaign.query.get(3)
+    campaign.status = "active"
+    db.session.commit()
 
     json_payload = [
         {
-            'image_id': 1,
-            'objects': [
+            "image_id": 1,
+            "objects": [
                 {
-                    'bounding_box': {
-                        'xmin': 123, 'xmax': 256, 'ymin': 187, 'ymax': 231
+                    "bounding_box": {
+                        "xmin": 123, "xmax": 256, "ymin": 187, "ymax": 231
                     },
-                    'label': "PET",
-                    'label_translated': 'Plastic'
+                    "label": "PET",
+                    "label_translated": "Plastic"
                 },
                 {
-                    'bounding_box': {
-                        'xmin': 234, 'xmax': 324, 'ymin': 564, 'ymax': 765
+                    "bounding_box": {
+                        "xmin": 234, "xmax": 324, "ymin": 564, "ymax": 765
                     },
-                    'label': "Treetrunk",
-                    'label_translated': "Organic"
+                    "label": "Tree",
+                    "label_translated": "Organic"
                 }
             ]
         }
     ]
 
     response = client.put(
-        "/api/v1/campaigns/1/objects", json=json_payload, headers=headers)
+        "/api/v1/campaigns/3/objects", json=json_payload, headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: campaigns.add_objects"
+
+    img1 = CampaignImage.query.filter(CampaignImage.image_id == 1).first()
+
+    assert len(img1.objects) == 2
+
+    assert img1.objects[0].label_translated == "Plastic" \
+        and img1.objects[0].label_original == "PET"
+    assert img1.objects[1].label_translated == "Organic" \
+        and img1.objects[1].label_original == "Tree"
 
 
 def test_add_objects_to_images_in_campaign_with_confidence(client, app, db,
                                                            mocker):
     headers = get_headers(db)
+    now, yesterday = create_basic_testset(db, obj=False)
 
-    # TODO: add some campaigns and images to DB and set IDs below
+    # Set campaign 3 to active
+    campaign = Campaign.query.get(3)
+    campaign.status = "active"
+    db.session.commit()
 
     json_payload = [
         {
-            'image_id': 1,
-            'objects': [
+            "image_id": 1,
+            "objects": [
                 {
-                    'bounding_box': {
-                        'xmin': 123, 'xmax': 256, 'ymin': 187, 'ymax': 231
+                    "bounding_box": {
+                        "xmin": 123, "xmax": 256, "ymin": 187, "ymax": 231
                     },
-                    'label': "PET",
-                    'confidence': 0.56
+                    "label": "Plastic",
+                    "confidence": 0.87
                 },
                 {
-                    'bounding_box': {
-                        'xmin': 234, 'xmax': 324, 'ymin': 564, 'ymax': 765
+                    "bounding_box": {
+                        "xmin": 234, "xmax": 324, "ymin": 564, "ymax": 765
                     },
-                    'label': "Treetrunk",
-                    'confidence': 0.87
+                    "label": "Organic",
+                    "confidence": 0.56
                 }
             ]
         }
     ]
 
     response = client.put(
-        "/api/v1/campaigns/1/objects", json=json_payload, headers=headers)
+        "/api/v1/campaigns/3/objects", json=json_payload, headers=headers)
     assert response.status_code == 200
-    assert response.json == "Not Implemented: campaigns.add_objects"
+
+    img1 = CampaignImage.query.filter(CampaignImage.image_id == 1).first()
+
+    assert len(img1.objects) == 2
+
+    assert img1.objects[0].label_translated == "Plastic"
+    assert img1.objects[1].label_translated == "Organic"
+
+def test_add_objects_to_images_in_campaign_overwrite_existing(client, app, db,
+                                                              mocker):
+    headers = get_headers(db)
+
+    # Inserting the default objects in this test case
+    now, yesterday = create_basic_testset(db)
+
+    # Set campaign 3 to active
+    campaign = Campaign.query.get(3)
+    campaign.status = "active"
+    db.session.commit()
+
+    json_payload = [
+        {
+            "image_id": 1,
+            "objects": [
+                {
+                    "bounding_box": {
+                        "xmin": 123, "xmax": 256, "ymin": 187, "ymax": 231
+                    },
+                    "label": "Plastic"
+                },
+                {
+                    "bounding_box": {
+                        "xmin": 234, "xmax": 324, "ymin": 564, "ymax": 765
+                    },
+                    "label": "Organic"
+                }
+            ]
+        }
+    ]
+
+    response = client.put(
+        "/api/v1/campaigns/3/objects", json=json_payload, headers=headers)
+    assert response.status_code == 200
+
+    # Verify that only the new objects remain, not the old ones
+    img1 = CampaignImage.query.filter(CampaignImage.image_id == 1).first()
+
+    assert len(img1.objects) == 2
+
+    # These would be "label1" and "label2" if the old labels are somehow
+    # retained over the new ones
+    assert img1.objects[0].label_translated == "Plastic"
+    assert img1.objects[1].label_translated == "Organic"
+
+def test_add_objects_to_images_in_campaign_image_doesnt_exist(client, app, db,
+                                                              mocker):
+    """
+    In this test we verify that if one of the provided image_ids is not part of
+    the campaign, no changes are made.
+    """
+    headers = get_headers(db)
+
+    # Inserting the default objects in this test case
+    now, yesterday = create_basic_testset(db)
+
+    # Set campaign 3 to active
+    campaign = Campaign.query.get(3)
+    campaign.status = "active"
+    db.session.commit()
+
+    # First one is an existing image in this campaign, second one is an image
+    # that is not part of this campaign.
+    json_payload = [
+        {
+            "image_id": 1,
+            "objects": [
+                {
+                    "bounding_box": {
+                        "xmin": 123, "xmax": 256, "ymin": 187, "ymax": 231
+                    },
+                    "label": "Plastic"
+                },
+                {
+                    "bounding_box": {
+                        "xmin": 234, "xmax": 324, "ymin": 564, "ymax": 765
+                    },
+                    "label": "Organic"
+                }
+            ]
+        },
+        {
+            "image_id": 3,
+            "objects": [
+                {
+                    "bounding_box": {
+                        "xmin": 123, "xmax": 256, "ymin": 187, "ymax": 231
+                    },
+                    "label": "Plastic"
+                },
+                {
+                    "bounding_box": {
+                        "xmin": 234, "xmax": 324, "ymin": 564, "ymax": 765
+                    },
+                    "label": "Organic"
+                }
+            ]
+        }
+    ]
+
+    response = client.put(
+        "/api/v1/campaigns/3/objects", json=json_payload, headers=headers)
+    assert response.status_code == 404
+
+    # Verify that the old objects remain on image 1
+    img1 = CampaignImage.query.filter(CampaignImage.image_id == 1).first()
+
+    assert len(img1.objects) == 2
+
+    assert img1.objects[0].label_translated == "label1"
+    assert img1.objects[1].label_translated == "label2"
