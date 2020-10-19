@@ -1,5 +1,5 @@
 from common.auth import flask_login
-from flask import abort
+from flask import abort, redirect
 from models.image import Image
 from models.campaign import Campaign
 
@@ -38,7 +38,19 @@ def get_image_url(image_id):
     Get an image. If authenticated, this will redirect to the actual image in
     blobstorage, with a SAS token for access.
     """
-    return "Not Implemented: images.get_image_url"
+    # First get image object
+    image = Image.query.get(image_id)
+    if image is None:
+        abort(404, "Image does not exist")
+
+    # Check permissions for the image
+    if not (flask_login.current_user.has_role('image-admin') \
+            or flask_login.current_user.has_access_to_image(image)):
+        abort(401)
+
+    url = image.get_azure_url()
+
+    return redirect(url, 303)
 
 
 @flask_login.login_required

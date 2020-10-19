@@ -1,6 +1,8 @@
 import datetime
+from common.azure import AzureWrapper
 from tests.shared import get_headers, add_user, add_imagesets, add_images, \
-    add_campaigns, add_image_to_campaign, add_object
+    add_campaigns, add_image_to_campaign, add_object, create_basic_testset, \
+        add_images_campaigns, add_labeler_user
 
 
 def test_list_images(client, app, db, mocker):
@@ -463,21 +465,72 @@ def test_list_objects_in_image_prioritize_default_match_in_first_not_finished(
     assert response.json == expected
 
 
-def test_images_get_link_with_campaign_key(client, app, db, mocker):
-    headers = get_headers(db)  # TODO: Change this to campaign keys
+class mydatetime:
+    @classmethod
+    def utcnow(cls):
+        return datetime.datetime(2020, 10, 19, 12, 34, 56)
 
-    # TODO: add images, campaigns to DB
+
+def test_images_get_link_with_campaign_key(client, app, db, mocker):
+    # Add labeling user on campaign 3
+    headers = add_labeler_user(db, "campaign", 3)
+
+    now, yesterday = create_basic_testset(db)
+
+    mocker.patch(
+        "models.image.AzureWrapper.get_sas_url",
+        return_value="url"
+    )
+    # Patch datetime to get a predictable 'expires'  call
+    mocker.patch(
+        "models.image.datetime",
+        mydatetime
+    )
 
     response = client.get("/api/v1/images/1", headers=headers)
-    assert response.status_code == 200
-    assert response.json == "Not Implemented: images.get_image_url"
+
+    assert response.status_code == 303
+
+    AzureWrapper.get_sas_url.assert_called_once_with(
+        '/some/path/file1.png',
+        expires=datetime.datetime(2020, 10, 26, 12, 34, 56),
+        permissions=["read"]
+    )
+
+
+def test_images_get_link_with_no_campaign_key(client, app, db, mocker):
+    # Add labeling user on campaign 3 (image is in campaign 3)
+    headers = add_labeler_user(db, "campaign", 2)
+
+    now, yesterday = create_basic_testset(db)
+
+    response = client.get("/api/v1/images/1", headers=headers)
+
+    assert response.status_code == 401
 
 
 def test_images_get_link_with_user_key(client, app, db, mocker):
     headers = get_headers(db)
 
-    # TODO: add images, campaigns to DB
+    now, yesterday = create_basic_testset(db)
+
+
+    mocker.patch(
+        "models.image.AzureWrapper.get_sas_url",
+        return_value="url"
+    )
+    # Patch datetime to get a predictable 'expires'  call
+    mocker.patch(
+        "models.image.datetime",
+        mydatetime
+    )
 
     response = client.get("/api/v1/images/1", headers=headers)
-    assert response.status_code == 200
-    assert response.json == "Not Implemented: images.get_image_url"
+
+    assert response.status_code == 303
+
+    AzureWrapper.get_sas_url.assert_called_once_with(
+        '/some/path/file1.png',
+        expires=datetime.datetime(2020, 10, 26, 12, 34, 56),
+        permissions=["read"]
+    )

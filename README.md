@@ -4,6 +4,17 @@ This project contains the Label Store API for The Ocean Cleanup. This is used
 to manage the full lifecycle of manually-labeled images from many different
 sources.
 
+# Configuration
+
+The following environment variables can/need to be provided
+
+| Variable | Required | Description |
+| --- | --- | --- |
+| FLASK_APP | True | Should be set to `main.py:app`
+| DB_CONNECTION_STRING | True | Database connection string |
+| AZURE_STORAGE_CONNECTION_STRING | True | Connection string for the blob storage account |
+| IMAGE_TOKEN_VALID_DAYS | False | Number of days the token returned for an image gives access (defaults to 7 if not set) |
+
 # API documentation
 
 When the server is running, go to `<server_url>/api/v1/ui` to see a 

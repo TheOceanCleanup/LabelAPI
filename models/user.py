@@ -45,6 +45,23 @@ class User(db.Model, flask_login.UserMixin):
             for x in self.roles
         ])
 
+    def has_access_to_image(self, image):
+        """
+        Validate that this user has access to a given image, by checking
+        if the image is part of any campaigns that this user has access to.
+
+        :param image:       The image object to verify
+        :returns:           Boolean indicating access.
+        """
+        return any([
+            self.has_role_on_subject(
+                'labeler',
+                'campaign',
+                campaign_image.campaign_id
+            )
+            for campaign_image in image.campaign_images
+        ])
+
     def generate_api_key(self):
         api_key = secrets.token_hex(16)
         api_secret = secrets.token_hex(16)

@@ -1,38 +1,10 @@
 from tests.shared import get_headers, add_user, add_imagesets, add_images, \
-    add_campaigns, add_image_to_campaign, add_object, add_labeler_user
+    add_campaigns, add_image_to_campaign, add_object, add_labeler_user, \
+    create_basic_testset, add_images_campaigns
 from models.campaign import Campaign, CampaignImage
 from models.user import User, Role
 import datetime
 import bcrypt
-
-
-def create_basic_testset(db, obj=True):
-    now, yesterday, user, img1, img2, img3, campaign1, campaign2, campaign3 = \
-        add_images_campaigns(db)
-
-    ci1 = add_image_to_campaign(db, img1, campaign3)
-    ci2 = add_image_to_campaign(db, img2, campaign3)
-    ci3 = add_image_to_campaign(db, img3, campaign1)
-
-    if obj:
-        obj1 = add_object(db, now, ci1, "label1", None, None, [1, 2, 3, 4])
-        obj2 = add_object(db, now, ci1, "label2", None, None, [2, 3, 4, 5])
-        obj3 = add_object(db, now, ci2, "label3", "translated_label3", 0.87,
-                          [6, 7, 8, 9])
-
-    ci2.labeled = False
-    db.session.commit()
-    return now, yesterday
-
-
-def add_images_campaigns(db):
-    now = datetime.datetime.now()
-    yesterday = now - datetime.timedelta(days=1)
-    user = add_user(db)
-    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
-    img1, img2, img3 = add_images(db, imgset1, now)
-    campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
-    return now, yesterday, user, img1, img2, img3, campaign1, campaign2, campaign3
 
 
 def test_list_campaigns(client, app, db, mocker):
@@ -852,7 +824,7 @@ def test_add_objects_to_images_in_campaign_with_campaign_key(client, app, db,
 
 def test_add_objects_to_images_in_campaign_with_user_key(client, app, db,
                                                          mocker):
-    headers = get_headers(db)  # TODO: Change this to campaign keys
+    headers = get_headers(db)
 
     now, yesterday = create_basic_testset(db, obj=False)
 

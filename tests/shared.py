@@ -3,6 +3,7 @@ from models.image import Image, ImageSet
 from models.campaign import Campaign, CampaignImage
 from models.object import Object
 import bcrypt
+import datetime
 
 
 def get_headers(db):
@@ -219,3 +220,32 @@ def add_object(db, now, campaign_image, label, label_translated, confidence,
     db.session.add(obj)
     db.session.commit()
     return obj
+
+
+def create_basic_testset(db, obj=True):
+    now, yesterday, user, img1, img2, img3, campaign1, campaign2, campaign3 = \
+        add_images_campaigns(db)
+
+    ci1 = add_image_to_campaign(db, img1, campaign3)
+    ci2 = add_image_to_campaign(db, img2, campaign3)
+    ci3 = add_image_to_campaign(db, img3, campaign1)
+
+    if obj:
+        obj1 = add_object(db, now, ci1, "label1", None, None, [1, 2, 3, 4])
+        obj2 = add_object(db, now, ci1, "label2", None, None, [2, 3, 4, 5])
+        obj3 = add_object(db, now, ci2, "label3", "translated_label3", 0.87,
+                          [6, 7, 8, 9])
+
+    ci2.labeled = False
+    db.session.commit()
+    return now, yesterday
+
+
+def add_images_campaigns(db):
+    now = datetime.datetime.now()
+    yesterday = now - datetime.timedelta(days=1)
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+    img1, img2, img3 = add_images(db, imgset1, now)
+    campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
+    return now, yesterday, user, img1, img2, img3, campaign1, campaign2, campaign3

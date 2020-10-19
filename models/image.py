@@ -1,5 +1,8 @@
 from common.db import db
 from sqlalchemy.dialects.postgresql import JSONB
+from common.azure import AzureWrapper
+from datetime import datetime, timedelta
+import os
 
 
 class Image(db.Model):
@@ -66,6 +69,18 @@ class Image(db.Model):
         Return the (relative) url that points towards the redirected download.
         """
         return f"/images/{self.id}"
+
+    def get_azure_url(self):
+        """
+        Return the Azure direct download URI, including a SAS token for access.
+        """
+        return AzureWrapper.get_sas_url(
+            self.blobstorage_path,
+            expires=datetime.utcnow() + \
+                timedelta(days=int(os.environ.get("IMAGE_TOKEN_VALID_DAYS",
+                                                  7))),
+            permissions=["read"]
+        )
 
     def get_objects(self, campaigns=[]):
         """

@@ -24,7 +24,8 @@ def unauthorized():
     return (
         {
             'error': 'Unauthorized request please make sure you set the '
-                     'Application-Key and Application-Secret in the header'
+                     'Authentication-Key and Authentication-Secret in the '
+                     'header'
         },
         401,
         {'ContentType': 'application/json'}
