@@ -187,6 +187,7 @@ class ImageSet(db.Model):
             return False
 
         self.status = desired_status
+        db.session.commit()
         return True
 
     def add_images(self, images):

@@ -54,7 +54,22 @@ def change_status(campaign_id, body):
 
     Change the status of a campaign
     """
-    return "Not Implemented: campaigns.change_status"
+    # Check if logged in user has correct permissions
+    if not flask_login.current_user.has_role('image-admin'):
+        abort(401)
+
+    campaign = Campaign.query.get(campaign_id)
+    if imageset is None:
+        abort(404, "Campaign Set does not exist")
+
+    if campaign.change_status(body['new_status']):
+        return "ok"
+    else:
+        abort(
+            409,
+            f'Not allowed to go from "{campaign.status}" to '
+            f'"{body["new_status"]}"'
+        )
 
 
 @flask_login.login_required

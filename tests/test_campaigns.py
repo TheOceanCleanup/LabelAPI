@@ -890,6 +890,10 @@ def test_add_objects_to_images_in_campaign_with_user_key(client, app, db,
     assert img2.objects[1].label_translated == "Metal" \
         and img2.objects[1].label_original == "Metal"
 
+    assert img1.labeled == True
+    assert img2.labeled == True
+    assert campaign.status == 'completed'
+
 
 def test_add_objects_to_images_in_campaign_wrong_status(client, app, db,
                                                         mocker):

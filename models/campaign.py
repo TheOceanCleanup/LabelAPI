@@ -116,7 +116,8 @@ class Campaign(db.Model):
     def add_objects(self, objects):
         """
         Add object to this campaign. Only allow adding images if current status
-        of the campaign is "active".
+        of the campaign is "active". If at the end of this, an object is
+        provided for each image, set status to complete.
 
         :params objects:    List of images and the objects in them to add.
         :returns boolean:   Success or not
@@ -162,9 +163,45 @@ class Campaign(db.Model):
                 )
                 db.session.add(o)
 
+            # Set status to labeled for this campaign image
+            campaign_image.labeled = True
+
         # Now that everything is done with no errors, we can commit.
         db.session.commit()
+
+        # Check if all campaign_images are labeled
+        if all([x.labeled for x in self.campaign_images]):
+            self.change_status('completed')
+
         return True, None, None
+
+    allowed_status_transitions = {
+        'created': ['active'],
+        'active': ['completed'],
+        'completed': ['finished'],
+        'finished': []
+    }
+
+    def change_status(self, desired_status):
+        """
+        Change the status of the current set. Check if this is a valid
+        transition first.
+
+        :param desired_status:  The status to go to
+        :returns boolean:       Success or not
+        """
+        if desired_status not in self.allowed_status_transitions[self.status]:
+            return False
+
+        self.status = desired_status
+        db.session.commit()
+
+        # Handle finishing actions
+        if self.status == 'finished':
+            # TODO: Export datasets
+            pass
+
+        return True
 
     @staticmethod
     def create(labeler_email, title, created_by, metadata=None,
