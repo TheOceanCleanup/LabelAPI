@@ -59,7 +59,7 @@ def change_status(campaign_id, body):
         abort(401)
 
     campaign = Campaign.query.get(campaign_id)
-    if imageset is None:
+    if campaign is None:
         abort(404, "Campaign Set does not exist")
 
     if campaign.change_status(body['new_status']):
