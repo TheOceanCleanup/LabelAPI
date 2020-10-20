@@ -245,13 +245,36 @@ class Campaign(db.Model):
 
                 paths.append(filepath)
 
-                # Determine all objects and add to list
+                # Determine all objects and add to list.
+                labels.append({
+                    'image_url': filepath,
+                    'label': [
+                        {
+                            'label': x.label_translated,
+                            'bottomX': x.x_min,
+                            'topX': x.x_max,
+                            'bottomY': x.y_min,
+                            'topY': x.y_max
+                        }
+                        for x in campaign_image.objects
+                    ],
+                    'label_confidence': [
+                        x.confidence for x in campaign_image.objects
+                    ]
+                })
 
             AzureWrapper.export_images_to_ML(
                 campaign_title + "_images",
                 f"Exported dataset as result of the finishing of labeling " +
                 f"campaign {campaign_title}",
                 paths
+            )
+
+            AzureWrapper.export_labels_to_ML(
+                campaign_title + "_labels",
+                f"Exported labels as result of the finishing of labeling " +
+                f"campaign {campaign_title}",
+                labels
             )
 
             logger.info("Thread for finishing capaign set done")

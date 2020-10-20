@@ -2,12 +2,14 @@ from azure.storage.blob import BlockBlobService, BlobPermissions, \
     ContainerPermissions
 from azure.common import AzureException
 from azureml.core import Workspace, Dataset, Datastore
+from PIL import Image, UnidentifiedImageError
 #from retrying import retry
 from datetime import datetime, timedelta
-from PIL import Image, UnidentifiedImageError
+from pathlib import Path
 import logging
 import os
 import io
+import pandas as pd
 
 logger = logging.getLogger("label-api")
 
@@ -349,3 +351,59 @@ class AzureWrapper:
             description=description,
             create_new_version=True
         )
+
+    @staticmethod
+    def export_labels_to_ML(name, description, labels):
+        """
+        Export a list of labels to an Azure ML dataset.
+
+        Requires the following environment variables to be set:
+        AZURE_STORAGE_CONNECTION_STRING
+        AZURE_ML_DATASTORE
+        AZURE_ML_SUBSCRIPTION_ID
+        AZURE_ML_RESOURCE_GROUP
+        AZURE_ML_WORKSPACE_NAME
+
+        :param name:        The name to give to the new dataset
+        :param description: Short description to give to the dataset
+        :param labels:      A list of image paths relative to the datastore
+                            object in Azure ML.
+        """
+        ws = AzureWrapper._get_workspace(
+            os.environ["AZURE_ML_SUBSCRIPTION_ID"],
+            os.environ["AZURE_ML_RESOURCE_GROUP"],
+            os.environ["AZURE_ML_WORKSPACE_NAME"]
+        )
+        data = []
+        for image in labels:
+            data.append([
+                image['image_url'],
+                image['label'],
+                image['label_confidence']
+            ])
+
+        columns = ['image_url', 'label', 'label_confidence']
+        df = pd.DataFrame(data, columns=columns)
+        Path("tmp").mkdir(parents=True, exist_ok=True)
+        local_path = f'tmp/{name}.csv'
+        df.to_csv(local_path, index=False)
+
+        datastore = AzureWrapper._get_datastore(
+            ws,
+            os.environ["AZURE_ML_DATASTORE"]
+        )
+
+        # upload the local file from src_dir to the target_path in datastore
+        datastore.upload(src_dir='tmp', target_path='label_sets')
+        dataset = Dataset.Tabular.from_delimited_files(
+            path=[(datastore, (f"label_sets/{name}.csv"))]
+        )
+
+        dataset.register(
+            workspace=ws,
+            name=name,
+            description=description,
+            create_new_version=True
+        )
+
+        os.remove(local_path)
