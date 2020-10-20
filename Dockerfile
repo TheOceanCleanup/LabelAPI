@@ -4,6 +4,9 @@ FROM python:3.7-alpine
 RUN apk update && apk add postgresql-dev gcc python3-dev musl-dev
 RUN apk add --virtual=build gcc libffi-dev musl-dev openssl-dev make cmake g++
 
+RUN apk add jpeg-dev zlib-dev
+ENV LIBRARY_PATH=/lib:/usr/lib
+
 # Install dependencies
 COPY requirements.txt ./
 RUN pip install -r requirements.txt
