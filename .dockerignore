@@ -1,0 +1,6 @@
+.pytest_cache
+deploy
+tests
+test_requirements.txt
+pytest.ini
+migrations

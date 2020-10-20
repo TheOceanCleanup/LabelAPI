@@ -68,7 +68,3 @@ def handle_version():
     branch = os.environ.get("GIT_BRANCH", "?")
     commit = os.environ.get("GIT_COMMIT", "?")
     return "Version: %s (branch: %s, commit: %s)" % (version, branch, commit)
-
-
-if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=8080, debug=True, use_reloader=True)
