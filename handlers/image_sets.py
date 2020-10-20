@@ -50,7 +50,7 @@ def add_imageset(body):
     if not success:
         abort(sc, response)
     else:
-        return response.to_dict()
+        return response
 
 
 @flask_login.login_required

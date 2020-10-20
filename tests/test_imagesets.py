@@ -114,8 +114,13 @@ def test_new_imageset(client, app, db, mocker):
     }
 
     mocker.patch(
-        "models.image.AzureWrapper.create_folder",
-        return_value="/some/folder/path"
+        "models.image.AzureWrapper.create_container",
+        return_value="container_name"
+    )
+
+    mocker.patch(
+        "models.image.AzureWrapper.get_container_sas_url",
+        return_value="some_sas_url"
     )
 
     expected = {
@@ -129,7 +134,8 @@ def test_new_imageset(client, app, db, mocker):
                 "subfield2": 3
             },
         },
-        "blobstorage_path": "/some/folder/path",
+        "blobstorage_path": "container_name",
+        "dropbox_url": "some_sas_url",
         "date_finished": None,
         "created_by": "test@example.com"
     }
@@ -139,7 +145,7 @@ def test_new_imageset(client, app, db, mocker):
     assert response.status_code == 200
 
     # As date is filled by DB, testing for equality is not possible. Remove and
-    # test after
+    # test after.
     resp_no_date = response.json
     del resp_no_date["date_created"]
 
@@ -175,7 +181,7 @@ def test_new_imageset_azure_failure(client, app, db, mocker):
     }
 
     mocker.patch(
-        "models.image.AzureWrapper.create_folder",
+        "models.image.AzureWrapper.create_container",
         return_value=False
     )
 

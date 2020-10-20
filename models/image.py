@@ -257,17 +257,28 @@ class ImageSet(db.Model):
         if ImageSet.query.filter(ImageSet.title == title).first() is not None:
             return False, 409, "Image Set title is already taken"
 
-        # Create folder on blobstorage
-        created_folder = AzureWrapper.create_folder(title)
-        if not created_folder:
-            return False, 500, "Failed to create folder in Blob Storage"
+        # Create dropbox container on blobstorage
+        created_container = AzureWrapper.create_container(title)
+        if not created_container:
+            return False, 500, "Failed to create container in Blob Storage"
 
         imageset = ImageSet(
             title=title,
             meta_data=metadata,
-            blobstorage_path=created_folder,
+            blobstorage_path=created_container,
             created_by=created_by
         )
         db.session.add(imageset)
         db.session.commit()
-        return True, 200, imageset
+
+        response = imageset.to_dict()
+        response["dropbox_url"] = AzureWrapper.get_container_sas_url(
+            created_container,
+            expires=datetime.utcnow() + \
+                    timedelta(days=int(
+                        os.environ.get("IMAGESET_UPLOAD_TOKEN_VALID_DAYS", 7))
+                    ),
+            permissions=["write", "list", "read", "delete"]
+        )
+
+        return True, 200, response
