@@ -3,6 +3,8 @@ from sqlalchemy.dialects.postgresql import JSONB
 from common.azure import AzureWrapper
 from datetime import datetime, timedelta
 import os
+from flask import current_app
+from threading import Thread
 
 
 class Image(db.Model):
@@ -188,7 +190,84 @@ class ImageSet(db.Model):
 
         self.status = desired_status
         db.session.commit()
+
+        # Handle finishing actions
+        if self.status == 'finished':
+            t = Thread(
+                target=self.finish_set,
+                args=(current_app._get_current_object(), db)
+            )
+            t.start()
+
         return True
+
+    def finish_set(self, app, db):
+        """
+        Perform the finishing actions on an image set. This is the following:
+        - Copy the files from the temporary dropbox to the final location
+        - Add the files into the image table
+        - Set the path of the image set to the new storage location
+        - Remove the temporary dropbox
+
+        Is meant to be run as a thread, hence the explicit passing of the app
+        and DB objects.
+
+        Requires the following environment variables to be set:
+        AZURE_STORAGE_IMAGESET_CONTAINER
+        AZURE_STORAGE_IMAGESET_FOLDER
+
+        :param app:         The app object this is run as (use
+                            flask.current_app._get_current_object())
+        :param db:          The database object
+        """
+        assert "AZURE_STORAGE_IMAGESET_CONTAINER" in os.environ
+        assert "AZURE_STORAGE_IMAGESET_FOLDER" in os.environ
+
+        target_container = os.environ["AZURE_STORAGE_IMAGESET_CONTAINER"]
+        folder_name = os.environ["AZURE_STORAGE_IMAGESET_FOLDER"] + "/" + \
+                      self.title.lower()
+
+        dropbox = self.blobstorage_path
+
+        # Copy all files from dropbox to final folder
+        files = AzureWrapper.copy_contents(
+            dropbox,
+            "",
+            target_container,
+            folder_name
+        )
+
+        if not files:
+            # Failed to copy
+            return
+
+        with app.app_context():
+            # Add images to DB
+            for f in files:
+                path = f"{target_container}/{folder_name}/{f.name}"
+
+                # Determine filetype, width and height
+                filetype, width, height = AzureWrapper.get_image_information(
+                    path
+                )
+
+                img = Image(
+                    blobstorage_path=path,
+                    imageset=self,
+                    filetype=filetype,
+                    filesize=f.properties.content_length,
+                    width=width,
+                    height=height
+                )
+                db.session.add(img)
+
+            # Change blobstorage path
+            self.blobstorage_path = f"{target_container}/{folder_name}"
+
+            db.session.commit()
+
+        # Delete dropbox
+        AzureWrapper.delete_container(dropbox)
 
     def add_images(self, images):
         """
@@ -254,7 +333,9 @@ class ImageSet(db.Model):
                             success).
         """
         # Check if title is still available
-        if ImageSet.query.filter(ImageSet.title == title).first() is not None:
+        if ImageSet.query.filter(
+                    db.func.lower(ImageSet.title) == title.lower()
+                ).first() is not None:
             return False, 409, "Image Set title is already taken"
 
         # Create dropbox container on blobstorage

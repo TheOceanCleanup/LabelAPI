@@ -3,9 +3,10 @@ from azure.storage.blob import BlockBlobService, BlobPermissions, \
 from azure.common import AzureException
 #from retrying import retry
 from datetime import datetime, timedelta
+from PIL import Image, UnidentifiedImageError
 import logging
 import os
-import re
+import io
 
 logger = logging.getLogger("label-api")
 
@@ -168,58 +169,114 @@ class AzureWrapper:
         return container_name
 
     @staticmethod
-    def create_folder(foldername):
+    def copy_contents(source_container, source_folder, target_container,
+                      target_folder):
         """
-        Create a new folder in the upload container. Requires
-        that the Azure datastore connection string is available in the
-        environment.
-
-        Given that the concept of an directory does not exist in Azure
-        blobstorage, the folder is created by writing an empyt file called
-        `.` into the storage, which has the path. It will then show as folder
-        in the UI.
+        Copy the contents from one container:folder to another.
 
         Requires the following environment variables to be set:
         AZURE_STORAGE_CONNECTION_STRING
-        AZURE_STORAGE_IMAGESET_CONTAINER
-        AZURE_STORAGE_IMAGESET_FOLDER
 
-        :param foldername:  Name to give the folder
-        :returns:           False in case of failure, full path otherwise
+        :param source_container:    Container to copy from
+        :param source_folder:       Folder to copy from, as prefix
+        :param target_container:    Container to copy to
+        :param target_folder:       Folder to copy to, as prefix
+        :returns:                   List of all copied files
         """
         assert "AZURE_STORAGE_CONNECTION_STRING" in os.environ
-        assert "AZURE_STORAGE_IMAGESET_CONTAINER" in os.environ
-        assert "AZURE_STORAGE_IMAGESET_FOLDER" in os.environ
+        block_blob_service = BlockBlobService(
+            connection_string=os.environ["AZURE_STORAGE_CONNECTION_STRING"]
+        )
+
+        try:
+            files = block_blob_service.list_blobs(source_container, source_folder)
+        except AzureException as e:
+            logger.warning(
+                f"Failed to list files in {source_container} : {source_folder}")
+            return False
+
+        for f in files:
+            if source_folder != "":
+                target_name = f.name.replace(source_folder, target_folder)
+            else:
+                target_name = f"{target_folder}/{f.name}"
+
+            try:
+                block_blob_service.copy_blob(
+                    target_container,
+                    target_name,
+                    f"https://{block_blob_service.account_name}.blob." +
+                    f"core.windows.net/{source_container}/{f.name}"
+                )
+            except AzureException as e:
+                logger.warning(f"Failed to copy file {f.name}")
+                return False
+
+        return files
+
+    @staticmethod
+    def delete_container(container):
+        """
+        Delete a container
+
+        Requires the following environment variables to be set:
+        AZURE_STORAGE_CONNECTION_STRING
+
+        :param container:    Container to delete
+        :returns:            Boolean indicating success
+        """
+        assert "AZURE_STORAGE_CONNECTION_STRING" in os.environ
+        block_blob_service = BlockBlobService(
+            connection_string=os.environ["AZURE_STORAGE_CONNECTION_STRING"]
+        )
+
+        try:
+            block_blob_service.delete_container(container)
+        except AzureException as e:
+            logger.warning(f"Failed to delete container {container}")
+            return False
+
+        return True
+
+    @staticmethod
+    def get_image_information(path):
+        """
+        Read the filetype and dimensions of an image
+
+        Requires the following environment variables to be set:
+        AZURE_STORAGE_CONNECTION_STRING
+
+        :param path:        Path where the image is located. The first
+                            component should be the container it is in.
+        :returns:           Tuple containing: image type, image width,
+                            image height
+        """
+        assert "AZURE_STORAGE_CONNECTION_STRING" in os.environ
 
         block_blob_service = BlockBlobService(
             connection_string=os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         )
 
-        folderpath = '/'.join([
-            os.environ["AZURE_STORAGE_IMAGESET_FOLDER"],
-            'imageset_' + foldername
-        ])
-
-        container = os.environ["AZURE_STORAGE_IMAGESET_CONTAINER"]
+        path = path.lstrip("/")
+        container = path.split("/")[0]
+        filepath = "/".join(path.split("/")[1:])
 
         try:
-            block_blob_service.create_blob_from_text(
-                container_name=container,
-                blob_name='/'.join([
-                    folderpath,
-                    'placeholder'
-                ]),
-                text=""
+            b = block_blob_service.get_blob_to_bytes(
+                container,
+                filepath
             )
-        except AzureException:
-            logger.warning(f"Failed to create folder {folderpath} in "
-                           f"container {container}")
-            return False
+        except AzureException as e:
+            logging.warning(
+                f"Failed to open file from blob storage: {container} : "
+                f"{filepath}"
+            )
+            return None, None, None
 
-        logger.info(f"Created folder {folderpath} in container " +
-                    f"{container}")
+        try:
+            img = Image.open(io.BytesIO(b.content))
+        except UnidentifiedImageError:
+            logging.warning(f"Not a valid image: {container} : {filepath}")
+            return None, None, None
 
-        return '/'.join([
-            os.environ["AZURE_STORAGE_IMAGESET_CONTAINER"],
-            folderpath
-        ])
+        return img.format, img.width, img.height
