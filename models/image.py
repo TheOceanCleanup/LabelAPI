@@ -3,8 +3,12 @@ from sqlalchemy.dialects.postgresql import JSONB
 from common.azure import AzureWrapper
 from datetime import datetime, timedelta
 import os
+import logging
 from flask import current_app
 from threading import Thread
+
+
+logger = logging.getLogger("label-api")
 
 
 class Image(db.Model):
@@ -223,9 +227,11 @@ class ImageSet(db.Model):
         assert "AZURE_STORAGE_IMAGESET_CONTAINER" in os.environ
         assert "AZURE_STORAGE_IMAGESET_FOLDER" in os.environ
 
+        logger.info("Starting thread for finishing image set")
+
         target_container = os.environ["AZURE_STORAGE_IMAGESET_CONTAINER"]
         folder_name = os.environ["AZURE_STORAGE_IMAGESET_FOLDER"] + "/" + \
-                      self.title.lower()
+                      self.title.lower().replace(" ", "-")
 
         dropbox = self.blobstorage_path
 
@@ -236,6 +242,8 @@ class ImageSet(db.Model):
             target_container,
             folder_name
         )
+
+        logger.debug("Files copied")
 
         if not files:
             # Failed to copy
@@ -266,8 +274,12 @@ class ImageSet(db.Model):
 
             db.session.commit()
 
+        logger.debug("Image objects created")
+
         # Delete dropbox
         AzureWrapper.delete_container(dropbox)
+
+        logger.info("Thread for finishing image set done")
 
     def add_images(self, images):
         """

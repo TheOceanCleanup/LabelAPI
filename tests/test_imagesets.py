@@ -1,6 +1,7 @@
 import datetime
 from tests.shared import get_headers, add_user, add_imagesets, add_images
-from models.image import ImageSet
+from models.image import ImageSet, Image
+from common.azure import AzureWrapper
 
 
 def test_list_imagesets(client, app, db, mocker):
@@ -193,12 +194,26 @@ def test_new_imageset_azure_failure(client, app, db, mocker):
     assert db.session.query(ImageSet).count() == 0
 
 
+class DummyProperties:
+    def __init__(self, content_length):
+        self.content_length = content_length
+
+class DummyFile:
+    def __init__(self, name, properties):
+        self.name = name
+        self.properties = properties
+
+
 def test_change_imageset_status(client, app, db, mocker):
     headers = get_headers(db)
 
     now = datetime.datetime.now()
     user = add_user(db)
     imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+
+    mocker.patch(
+        "models.image.ImageSet.finish_set"
+    )
 
     json_payload = {
         'new_status': 'finished'
@@ -208,6 +223,8 @@ def test_change_imageset_status(client, app, db, mocker):
         "/api/v1/image_sets/1", json=json_payload, headers=headers)
     assert response.status_code == 200
     assert response.json == "ok"
+
+    ImageSet.finish_set.assert_called_once()
 
 
 def test_change_imageset_status_invalid(client, app, db, mocker):
@@ -226,6 +243,109 @@ def test_change_imageset_status_invalid(client, app, db, mocker):
     assert response.status_code == 409
     assert response.json['detail'] == \
         'Not allowed to go from "finished" to "finished"'
+
+
+def test_set_finish(client, app, db, mocker):
+    headers = get_headers(db)
+
+    now = datetime.datetime.now()
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+
+    mocker.patch(
+        "models.image.AzureWrapper.copy_contents",
+        return_value=[
+            DummyFile('file1', DummyProperties(123)),
+            DummyFile('file2', DummyProperties(456)),
+        ]
+    )
+    mocker.patch(
+        "models.image.AzureWrapper.get_image_information",
+        return_value=("PNG", 789, 900)
+    )
+    mocker.patch(
+        "models.image.AzureWrapper.delete_container"
+    )
+
+    imgset1.finish_set(app, db)
+
+    AzureWrapper.copy_contents.assert_called_once_with(
+        "/some/otherpath",
+        "",
+        "upload-container",
+        "uploads/some-image-set"
+    )
+    AzureWrapper.get_image_information.assert_has_calls([
+        mocker.call("upload-container/uploads/some-image-set/file1"),
+        mocker.call("upload-container/uploads/some-image-set/file2")
+    ])
+    AzureWrapper.delete_container.assert_called_once_with(
+        "/some/otherpath"
+    )
+
+    img1 = db.session.query(Image)\
+                     .filter(Image.blobstorage_path == \
+                             "upload-container/uploads/some-image-set/file1")\
+                     .first()
+    img2 = db.session.query(Image)\
+                     .filter(Image.blobstorage_path == \
+                             "upload-container/uploads/some-image-set/file1")\
+                     .first()
+    imgset1 = db.session.query(ImageSet).get(1)
+
+    assert img1 is not None
+    assert img2 is not None
+    assert img1.filetype == "PNG"
+    assert img1.width == 789
+    assert img1.height == 900
+    assert imgset1.blobstorage_path == \
+        'upload-container/uploads/some-image-set'
+
+
+def test_set_finish_copy_failed(client, app, db, mocker):
+    headers = get_headers(db)
+
+    now = datetime.datetime.now()
+    user = add_user(db)
+    imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
+
+    mocker.patch(
+        "models.image.AzureWrapper.copy_contents",
+        return_value=False
+    )
+    mocker.patch(
+        "models.image.AzureWrapper.get_image_information",
+        return_value=("PNG", 789, 900)
+    )
+    mocker.patch(
+        "models.image.AzureWrapper.delete_container"
+    )
+
+    imgset1.finish_set(app, db)
+
+    AzureWrapper.copy_contents.assert_called_once_with(
+        "/some/otherpath",
+        "",
+        "upload-container",
+        "uploads/some-image-set"
+    )
+    AzureWrapper.get_image_information.assert_not_called()
+    AzureWrapper.delete_container.assert_not_called()
+
+
+    img1 = db.session.query(Image)\
+                     .filter(Image.blobstorage_path == \
+                             "upload-container/uploads/some-image-set/file1")\
+                     .first()
+    img2 = db.session.query(Image)\
+                     .filter(Image.blobstorage_path == \
+                             "upload-container/uploads/some-image-set/file1")\
+                     .first()
+    imgset1 = db.session.query(ImageSet).get(1)
+
+    assert img1 is None
+    assert img2 is None
+    assert imgset1.blobstorage_path == '/some/otherpath'
 
 
 def test_list_images_in_set(client, app, db, mocker):

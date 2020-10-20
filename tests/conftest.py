@@ -11,9 +11,9 @@ port = 5005
 def app():
     os.environ["DB_CONNECTION_STRING"] = \
         'postgresql://toc:toc_pswd@localhost:5433/toc_test'
-    os.environ["AZ_DATASTORE_ACCOUNT"] = "SOMEACCOUNT"
-    os.environ["AZ_DATASTORE_KEY"] = "SOMEKEY"
     os.environ["IMAGE_TOKEN_VALID_DAYS"] = "7"
+    os.environ["AZURE_STORAGE_IMAGESET_CONTAINER"] = "upload-container"
+    os.environ["AZURE_STORAGE_IMAGESET_FOLDER"] = "uploads"
 
     app = App().app
     with app.app_context():
