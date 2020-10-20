@@ -70,7 +70,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ImageSet"
+                $ref: "#/components/schemas/CreatedImageSet"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
         default:
@@ -660,6 +660,20 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/Image"
+    CreatedImageSet:
+      type: object
+      allOf:
+        - $ref: "#/components/schemas/ImageSet"
+        - type: object
+          required:
+            - dropbox_url
+          properties:
+            dropbox_url:
+                description: SAS token enabled URL pointing to the dropbox
+                  where images for this set can be uploaded.
+                type: string
+                format: url
+
     Image:
       type: object
       required:
