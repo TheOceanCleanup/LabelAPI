@@ -17,6 +17,10 @@ The following environment variables can/need to be provided
 | AZURE_STORAGE_IMAGESET_FOLDER | True | Base folder (or path of folders) where new imagesets will be uploaded |
 | IMAGE_READ_TOKEN_VALID_DAYS | False | Number of days the token returned for an image gives access (defaults to 7 if not set) |
 | IMAGESET_UPLOAD_TOKEN_VALID_DAYS | False | Number of days the token returned for uploading images is valid (defaults to 7 if not set) |
+| AZURE_ML_DATASTORE | True | Name of the datastore that reflects the container of our images |
+| AZURE_ML_SUBSCRIPTION_ID | True | Subscription ID where the Azure ML workspace is located |
+| AZURE_ML_RESOURCE_GROUP | True | Resource Group where the Azure ML workspace is located |
+| AZURE_ML_WORKSPACE_NAME | True | Name of the Azure ML workspace |
 
 # API documentation
 
@@ -37,6 +41,17 @@ If this functionality is ever desired, we may be able to add this manually
 as part of the Swagger UI configuration through the `requestInterceptor`,
 see
 https://swagger.io/docs/open-source-tools/swagger-ui/usage/configuration/
+
+# Connect to Azure ML
+
+In order to connect to Azure ML, the container in which the images are
+stored should be configured as a DataStore in Azure ML. This datastore
+should be given a name, and then be provided as environment variable
+`AZURE_ML_DATASTORE` to this application.
+
+In addition, the `AZURE_ML_SUBSCRIPTION_ID`, `AZURE_ML_RESOURCE_GROUP` and
+`AZURE_ML_WORKSPACE_NAME` environment variables should be provided (see 
+above).
 
 # Database
 

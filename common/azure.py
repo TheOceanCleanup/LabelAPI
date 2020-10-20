@@ -1,6 +1,7 @@
 from azure.storage.blob import BlockBlobService, BlobPermissions, \
     ContainerPermissions
 from azure.common import AzureException
+from azureml.core import Workspace, Dataset, Datastore
 #from retrying import retry
 from datetime import datetime, timedelta
 from PIL import Image, UnidentifiedImageError
@@ -280,3 +281,71 @@ class AzureWrapper:
             return None, None, None
 
         return img.format, img.width, img.height
+
+    @staticmethod
+    def _get_workspace(subscription_id, resource_group, workspace_name):
+        """
+        Load the correct workspace
+
+        :param subscription_id:     Azure subscription
+        :param resource_group:      Azure resource group
+        :param workspace_name:      Name of the workspace
+        :returns:                   Azure ML Workspace object
+        """
+        return Workspace(subscription_id, resource_group, workspace_name)
+
+    @staticmethod
+    def _get_datastore(workspace, datastore_name):
+        """
+        Get a Datastore object
+
+        :param workspace:       Azure ML Workspace object
+        :param datastore_name:  Name of the datastore to load
+        :returns:               Azure ML Datastore object
+        """
+        return Datastore.get(workspace, datastore_name)
+
+    @staticmethod
+    def export_images_to_ML(name, description, images):
+        """
+        Export a list of images to an Azure ML dataset.
+
+        Requires the following environment variables to be set:
+        AZURE_STORAGE_CONNECTION_STRING
+        AZURE_ML_DATASTORE
+        AZURE_ML_SUBSCRIPTION_ID
+        AZURE_ML_RESOURCE_GROUP
+        AZURE_ML_WORKSPACE_NAME
+
+        :param name:        The name to give to the new dataset
+        :param description: Short description to give to the dataset
+        :param images:      A list of image paths relative to the datastore
+                            object in Azure ML.
+        """
+        assert "AZURE_STORAGE_CONNECTION_STRING" in os.environ
+        assert "AZURE_ML_DATASTORE" in os.environ
+        assert "AZURE_ML_SUBSCRIPTION_ID" in os.environ
+        assert "AZURE_ML_RESOURCE_GROUP" in os.environ
+        assert "AZURE_ML_WORKSPACE_NAME" in os.environ
+
+        ws = AzureWrapper._get_workspace(
+            os.environ["AZURE_ML_SUBSCRIPTION_ID"],
+            os.environ["AZURE_ML_RESOURCE_GROUP"],
+            os.environ["AZURE_ML_WORKSPACE_NAME"]
+        )
+        datastore = AzureWrapper._get_datastore(
+            ws,
+            os.environ["AZURE_ML_DATASTORE"]
+        )
+
+        paths = [(datastore, x) for x in images]
+
+        dataset = Dataset.File.from_files(
+            path=paths
+        )
+        dataset.register(
+            workspace=ws,
+            name=name,
+            description=description,
+            create_new_version=True
+        )

@@ -1,8 +1,15 @@
 from common.db import db
+from common.azure import AzureWrapper
 from sqlalchemy.dialects.postgresql import JSONB
 from models.user import User, Role
 from models.image import Image
 from models.object import Object
+from threading import Thread
+from flask import current_app
+import logging
+
+
+logger = logging.getLogger("label-api")
 
 
 class Campaign(db.Model):
@@ -193,15 +200,62 @@ class Campaign(db.Model):
         if desired_status not in self.allowed_status_transitions[self.status]:
             return False
 
-        self.status = desired_status
+        # self.status = desired_status
         db.session.commit()
 
         # Handle finishing actions
-        if self.status == 'finished':
-            # TODO: Export datasets
-            pass
+        if True:#self.status == 'finished':
+            t = Thread(
+                target=self.finish_campaign,
+                args=(
+                    current_app._get_current_object(),
+                    db,
+                    self.id,
+                    self.title
+                )
+            )
+            t.start()
 
         return True
+
+    def finish_campaign(self, app, db, campaign_id, campaign_title):
+        """
+        The campaign is finished. At this point, we need to export two things
+        to Azure ML: The images as <campaign_title>_images and the labels as
+        <campaign_title>_labels.
+
+        Is meant to be run as a thread.
+
+        TODO: For future improvements, consider detecting the datastore based
+              on the container component of the image path. For now this does
+              not seem to be necessary.
+        """
+        print("Hi")
+        logger.info("Starting thread for finishing campaign")
+        paths = []
+        labels = []
+        with app.app_context():
+            campaign_images = CampaignImage.query.filter(
+                CampaignImage.campaign_id == campaign_id).all()
+            for campaign_image in campaign_images:
+                path = campaign_image.image.blobstorage_path
+                path = path.lstrip('/')
+                container = path.split("/")[0]
+                filepath = "/".join(path.split("/")[1:])
+
+                paths.append(filepath)
+
+                # Determine all objects and add to list
+
+            AzureWrapper.export_images_to_ML(
+                campaign_title + "_images",
+                f"Exported dataset as result of the finishing of labeling " +
+                f"campaign {campaign_title}",
+                paths
+            )
+
+            logger.info("Thread for finishing capaign set done")
+            print("Bye")
 
     @staticmethod
     def create(labeler_email, title, created_by, metadata=None,
