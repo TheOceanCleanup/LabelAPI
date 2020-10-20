@@ -444,19 +444,19 @@ def test_get_campaign_metadata(client, app, db, mocker):
     assert response.json == expected
 
 
-def test_change_campaign_status(client, app, db, mocker):
-    headers = get_headers(db)
+# def test_change_campaign_status(client, app, db, mocker):
+#     headers = get_headers(db)
 
-    # TODO: add some campaign to DB and set ID in url below
+#     # TODO: add some campaign to DB and set ID in url below
 
-    json_payload = {
-        "new_status": "active"
-    }
+#     json_payload = {
+#         "new_status": "active"
+#     }
 
-    response = client.put(
-        "/api/v1/campaigns/1", json=json_payload, headers=headers)
-    assert response.status_code == 200
-    assert response.json == "Not Implemented: campaigns.change_status"
+#     response = client.put(
+#         "/api/v1/campaigns/1", json=json_payload, headers=headers)
+#     assert response.status_code == 200
+#     assert response.json == "Not Implemented: campaigns.change_status"
 
 
 def test_add_images_to_campaign_by_id(client, app, db, mocker):
@@ -974,6 +974,13 @@ def test_add_objects_to_images_in_campaign_with_translations(client, app, db,
         and img1.objects[0].label_original == "PET"
     assert img1.objects[1].label_translated == "Organic" \
         and img1.objects[1].label_original == "Tree"
+
+    # Good spot to check if the labeling progress is done correctly
+    assert img1.labeled == True
+
+    img2 = CampaignImage.query.filter(CampaignImage.image_id == 2).first()
+    assert img2.labeled == False
+    assert campaign.status == 'active'
 
 
 def test_add_objects_to_images_in_campaign_with_confidence(client, app, db,
