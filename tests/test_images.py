@@ -31,8 +31,7 @@ def test_list_images(client, app, db, mocker):
                 "location": {
                     "description": None,
                     "lat": None,
-                    "lon": None,
-                    "geopoint": None
+                    "lon": None
                 },
                 "type": "drone",
                 "metadata": {
@@ -60,8 +59,7 @@ def test_list_images(client, app, db, mocker):
                 "location": {
                     "description": "Dominican Republic - Bridge A",
                     "lat": None,
-                    "lon": None,
-                    "geopoint": None
+                    "lon": None
                 },
                 "type": "bridge",
                 "metadata": None,
@@ -86,8 +84,7 @@ def test_list_images(client, app, db, mocker):
                 "location": {
                     "description": "Dominican Republic - Bridge A",
                     "lat": 51.920801,
-                    "lon": 4.4662474,
-                    "geopoint": None
+                    "lon": 4.4662474
                 },
                 "type": "bridge",
                 "metadata": None,
@@ -141,8 +138,7 @@ def test_list_images_pagination(client, app, db, mocker):
                 "location": {
                     "description": "Dominican Republic - Bridge A",
                     "lat": 51.920801,
-                    "lon": 4.4662474,
-                    "geopoint": None
+                    "lon": 4.4662474
                 },
                 "type": "bridge",
                 "metadata": None,

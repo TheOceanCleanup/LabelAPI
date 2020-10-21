@@ -63,10 +63,7 @@ class Image(db.Model):
             'location': {
                 'description': self.location_description,
                 'lat': self.lat,
-                'lon': self.lon,
-                'geopoint': str(self.geopoint)
-                            if self.geopoint is not None
-                            else None
+                'lon': self.lon
             },
             'type': self.type,
             'metadata': self.meta_data,

@@ -725,26 +725,23 @@ components:
             - description
             - lat
             - lon
-            - geopoint
           properties:
             description:
               description: The location this image was taken
               type: string
               nullable: true
             lat:
-              description: The locations latitude
+              description: The location's latitude
               type: number
               format: float
               nullable: true
+              example: 51.920801
             lon:
-              description: The locations longitude
+              description: The location's longitude
               type: number
               format: float
               nullable: true
-            geopoint:
-              description: The location this image was taken as geopoint.
-              type: string
-              nullable: true
+              example: 4.4662474
         type:
           description: The type of this image
           type: string
