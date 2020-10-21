@@ -1,5 +1,6 @@
 from common.db import db
 from sqlalchemy.dialects.postgresql import JSONB
+from geoalchemy2 import Geometry
 from common.azure import AzureWrapper
 from datetime import datetime, timedelta
 import os
@@ -18,7 +19,10 @@ class Image(db.Model):
     imageset_id = db.Column(db.Integer, db.ForeignKey('imageset.id'),
                             nullable=True)
     date_taken = db.Column(db.DateTime, nullable=True)
-    location_taken = db.Column(db.String(1024), nullable=True)
+    location_description = db.Column(db.String(1024), nullable=True)
+    lat = db.Column(db.Float, nullable=True)
+    lon = db.Column(db.Float, nullable=True)
+    geopoint = db.Column(Geometry("POINT"))
     type = db.Column(db.String(128), nullable=True)
     meta_data = db.Column(JSONB, name="metadata", nullable=True)
     tss_id = db.Column(db.String(128), nullable=True)
@@ -56,7 +60,11 @@ class Image(db.Model):
             'blobstorage_path': self.blobstorage_path,
             'imageset': imageset,
             'date_taken': self.date_taken,
-            'location_taken': self.location_taken,
+            'location': {
+                'description': self.location_description,
+                'lat': self.lat,
+                'lon': self.lon
+            },
             'type': self.type,
             'metadata': self.meta_data,
             'tss_id': self.tss_id,

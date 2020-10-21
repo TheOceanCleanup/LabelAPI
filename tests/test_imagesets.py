@@ -374,7 +374,11 @@ def test_list_images_in_set(client, app, db, mocker):
                     "title": "some image set"
                 },
                 "date_taken": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-                "location_taken": "Dominican Republic - Bridge A",
+                "location": {
+                    "description": "Dominican Republic - Bridge A",
+                    "lat": None,
+                    "lon": None
+                },
                 "type": "bridge",
                 "metadata": None,
                 "tss_id": None,
@@ -395,7 +399,11 @@ def test_list_images_in_set(client, app, db, mocker):
                     "title": "some image set"
                 },
                 "date_taken": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-                "location_taken": "Dominican Republic - Bridge A",
+                "location": {
+                    "description": "Dominican Republic - Bridge A",
+                    "lat": 51.920801,
+                    "lon": 4.4662474
+                },
                 "type": "bridge",
                 "metadata": None,
                 "tss_id": None,
@@ -442,7 +450,11 @@ def test_list_images_in_set_pagination(client, app, db, mocker):
                     "title": "some image set"
                 },
                 "date_taken": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-                "location_taken": "Dominican Republic - Bridge A",
+                "location": {
+                    "description": "Dominican Republic - Bridge A",
+                    "lat": 51.920801,
+                    "lon": 4.4662474
+                },
                 "type": "bridge",
                 "metadata": None,
                 "tss_id": None,
