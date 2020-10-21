@@ -720,9 +720,31 @@ components:
           format: date-time
           example: 2020-10-12T11:42:42Z
         location_taken:
-          description: The location this image was taken
-          type: string
-          nullable: true
+          type: object
+          required:
+            - description
+            - lat
+            - lon
+            - geopoint
+          properties:
+            description:
+              description: The location this image was taken
+              type: string
+              nullable: true
+            lat:
+              description: The locations latitude
+              type: number
+              format: float
+              nullable: true
+            lon:
+              description: The locations longitude
+              type: number
+              format: float
+              nullable: true
+            geopoint:
+              description: The location this image was taken as geopoint.
+              type: string
+              nullable: true
         type:
           description: The type of this image
           type: string

@@ -28,7 +28,12 @@ def test_list_images(client, app, db, mocker):
                 "blobstorage_path": "/some/path/file1.png",
                 "imageset": None,
                 "date_taken": None,
-                "location_taken": None,
+                "location": {
+                    "description": None,
+                    "lat": None,
+                    "lon": None,
+                    "geopoint": None
+                },
                 "type": "drone",
                 "metadata": {
                     "source": "video1.mp4",
@@ -52,7 +57,12 @@ def test_list_images(client, app, db, mocker):
                     "title": "some image set"
                 },
                 "date_taken": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-                "location_taken": "Dominican Republic - Bridge A",
+                "location": {
+                    "description": "Dominican Republic - Bridge A",
+                    "lat": None,
+                    "lon": None,
+                    "geopoint": None
+                },
                 "type": "bridge",
                 "metadata": None,
                 "tss_id": None,
@@ -73,7 +83,12 @@ def test_list_images(client, app, db, mocker):
                     "title": "some image set"
                 },
                 "date_taken": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-                "location_taken": "Dominican Republic - Bridge A",
+                "location": {
+                    "description": "Dominican Republic - Bridge A",
+                    "lat": 51.920801,
+                    "lon": 4.4662474,
+                    "geopoint": None
+                },
                 "type": "bridge",
                 "metadata": None,
                 "tss_id": None,
@@ -123,7 +138,12 @@ def test_list_images_pagination(client, app, db, mocker):
                     "title": "some image set"
                 },
                 "date_taken": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
-                "location_taken": "Dominican Republic - Bridge A",
+                "location": {
+                    "description": "Dominican Republic - Bridge A",
+                    "lat": 51.920801,
+                    "lon": 4.4662474,
+                    "geopoint": None
+                },
                 "type": "bridge",
                 "metadata": None,
                 "tss_id": None,
