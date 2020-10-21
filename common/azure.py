@@ -48,7 +48,7 @@ class AzureWrapper:
 
     @staticmethod
     def get_sas_url(path, expires=datetime.utcnow() + timedelta(days=7),
-            permissions=["read"]):
+                    permissions=["read"]):
         """
         Generate a download URL with SAS key for a given filepath.
 
@@ -93,8 +93,8 @@ class AzureWrapper:
 
     @staticmethod
     def get_container_sas_url(container_name,
-            expires=datetime.utcnow() + timedelta(days=7),
-            permissions=["read"]):
+                              expires=datetime.utcnow() + timedelta(days=7),
+                              permissions=["read"]):
         """
         Generate an access URL with SAS key for a containers.
 
@@ -130,8 +130,8 @@ class AzureWrapper:
         # For some reason, the restype=container parameter is added.
         # This breaks the token. Remove this. (see
         # https://github.com/Azure/azure-storage-python/issues/543)
-        url_tmp = url.split('?')
-        params = url_tmp[1].split('&')
+        url_tmp = url.split("?")
+        params = url_tmp[1].split("&")
         if "restype=container" in params:
             params.remove("restype=container")
         url = url_tmp[0] + "?" + "&".join(params)
@@ -160,11 +160,11 @@ class AzureWrapper:
         try:
             block_blob_service.create_container(container_name)
         except AzureException:
-            logger.warning("Failed to create dropbox container " + 
+            logger.warning("Failed to create dropbox container " +
                            container_name)
             return False
 
-        logger.info("Created dropbox container" + container_name)
+        logger.info("Created dropbox container " + container_name)
         return container_name
 
     @staticmethod
@@ -187,10 +187,11 @@ class AzureWrapper:
         )
 
         try:
-            files = block_blob_service.list_blobs(source_container, source_folder)
+            files = block_blob_service.list_blobs(source_container,
+                                                  source_folder)
         except AzureException as e:
             logger.warning(
-                f"Failed to list files in {source_container} : {source_folder}")
+                f"Failed to list files in {source_container}/{source_folder}")
             return False
 
         for f in files:
@@ -263,7 +264,7 @@ class AzureWrapper:
             )
         except AzureException as e:
             logging.warning(
-                f"Failed to open file from blob storage: {container} : "
+                f"Failed to open file from blob storage: {container}/"
                 f"{filepath}"
             )
             return None, None, None
@@ -272,7 +273,7 @@ class AzureWrapper:
             try:
                 img = Image.open(img_data)
             except UnidentifiedImageError:
-                logging.warning(f"Not a valid image: {container} : {filepath}")
+                logging.warning(f"Not a valid image: {container}/{filepath}")
                 return None, None, None
 
             return img.format, img.width, img.height
@@ -372,7 +373,7 @@ class AzureWrapper:
         columns = ["image_url", "label", "label_confidence"]
         df = pd.DataFrame(data, columns=columns)
         Path("tmp").mkdir(parents=True, exist_ok=True)
-        local_path = f'tmp/{name}.csv'
+        local_path = f"tmp/{name}.csv"
         df.to_csv(local_path, index=False)
 
         datastore = AzureWrapper._get_datastore(

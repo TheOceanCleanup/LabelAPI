@@ -208,8 +208,7 @@ def add_object(db, now, campaign_image, label, label_translated, confidence,
                bbox):
     obj = Object(
         campaign_image=campaign_image,
-        label_translated=label_translated
-                         if label_translated is not None
+        label_translated=label_translated if label_translated is not None
                          else label,
         label_original=label,
         confidence=confidence,
@@ -250,4 +249,5 @@ def add_images_campaigns(db):
     imgset1, imgset2, imgset3 = add_imagesets(db, user, now)
     img1, img2, img3 = add_images(db, imgset1, now)
     campaign1, campaign2, campaign3 = add_campaigns(db, user, now, yesterday)
-    return now, yesterday, user, img1, img2, img3, campaign1, campaign2, campaign3
+    return now, yesterday, user, img1, img2, img3, campaign1, campaign2, \
+        campaign3

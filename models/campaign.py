@@ -8,7 +8,6 @@ from threading import Thread
 from flask import current_app
 import logging
 
-
 logger = logging.getLogger("label-api")
 
 
@@ -18,10 +17,10 @@ class Campaign(db.Model):
     title = db.Column(db.String(128), nullable=False, unique=True)
     meta_data = db.Column(JSONB, name="metadata", nullable=True)
     status = db.Column(
-        db.Enum('created', 'active', 'completed', 'finished',
+        db.Enum("created", "active", "completed", "finished",
                 name="campaign_status"),
         nullable=False,
-        default='created'
+        default="created"
     )
     label_translations = db.Column(JSONB)
     date_created = db.Column(db.DateTime, nullable=False,
@@ -29,7 +28,7 @@ class Campaign(db.Model):
     date_started = db.Column(db.DateTime, nullable=True)
     date_completed = db.Column(db.DateTime, nullable=True)
     date_finished = db.Column(db.DateTime, nullable=True)
-    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'),
+    created_by_id = db.Column(db.Integer, db.ForeignKey("user.id"),
                               name="created_by", nullable=False)
 
     created_by = db.relationship(
@@ -43,36 +42,46 @@ class Campaign(db.Model):
     )
 
     def __repr__(self):
-        return '<Campaign %r>' % self.title
+        return "<Campaign %r>" % self.title
 
     def to_dict(self):
         return {
-            'campaign_id': self.id,
-            'title': self.title,
-            'status': self.status,
-            'progress': {
-                'done': len([x for x in self.campaign_images if x.labeled]),
-                'total': len(self.campaign_images)
+            "campaign_id": self.id,
+            "title": self.title,
+            "status": self.status,
+            "progress": {
+                "done": len([x for x in self.campaign_images if x.labeled]),
+                "total": len(self.campaign_images)
             },
-            'metadata': self.meta_data,
-            'label_translations': self.label_translations,
-            'date_created': self.date_created,
-            'date_started': self.date_started,
-            'date_completed': self.date_completed,
-            'date_finished': self.date_finished,
-            'created_by': self.created_by.email
+            "metadata": self.meta_data,
+            "label_translations": self.label_translations,
+            "date_created": self.date_created,
+            "date_started": self.date_started,
+            "date_completed": self.date_completed,
+            "date_finished": self.date_finished,
+            "created_by": self.created_by.email
         }
 
     def give_labeler_access(self, user, commit=True):
+        """
+        Give a specific user the "labeler" role on this campaign.
+
+        :param user:    The user to give access to.
+        :param commit:  Whether to commit directly, or postpone this (when
+                        called as part of some other flow).
+        :returns:       Boolean indicating succes.
+        """
         role = Role(
-            role='labeler',
+            role="labeler",
             user=user,
-            subject_type='campaign',
+            subject_type="campaign",
             subject_id=self.id
         )
         db.session.add(role)
         if commit:
             db.session.commit()
+
+        logger.info("Added labeler role to %s" % user.email)
         return True
 
     def add_images(self, images):
@@ -82,13 +91,14 @@ class Campaign(db.Model):
         campaign is "created".
 
         :params images:     List of images to add. Provided as objects, either
-                            with 'id' or as 'filepath' as sole property.
+                            with "id" or as "filepath" as sole property.
         :returns boolean:   Success or not
         :returns int:       Status code in case of failure - 404 if image does
                             not exist or 409 if status of campaign != created
         :returns string:    Error message in case of failure
         """
-        if self.status != 'created':
+        if self.status != "created":
+            logger.warning(f"Trying to add images to {self.status} campaign")
             return False, 409, \
                 f'Not allowed to add images while status is "{self.status}"'
 
@@ -96,11 +106,11 @@ class Campaign(db.Model):
             # Find image.
             # NOTE: Connexion has already validated for us that either id or
             #       filepath exists, hence the simple else statement
-            if 'id' in i:
-                image = Image.query.get(i['id'])
+            if "id" in i:
+                image = Image.query.get(i["id"])
             else:
                 image = Image.query\
-                        .filter(Image.blobstorage_path == i['filepath'])\
+                        .filter(Image.blobstorage_path == i["filepath"])\
                         .first()
 
             # Check if image exists
@@ -111,7 +121,7 @@ class Campaign(db.Model):
             # All good, add image to campaign, if not yet added (if it is,
             # simply ignore). Note that this is not commited yet, allowing a
             # rollback in case on of the other images can't be added
-            if not image in [x.image for x in self.campaign_images]:
+            if image not in [x.image for x in self.campaign_images]:
                 campaign_image = CampaignImage(campaign_id=self.id,
                                                image_id=image.id)
                 db.session.add(campaign_image)
@@ -133,14 +143,15 @@ class Campaign(db.Model):
                             campaign != active
         :returns string:    Error message in case of failure
         """
-        if self.status != 'active':
+        if self.status != "active":
+            logger.warning(f"Trying to add objects to {self.status} campaign")
             return False, 409, \
                 f'Not allowed to add objects while status is "{self.status}"'
 
         for item in objects:
             # Find campaign image.
             for x in self.campaign_images:
-                if x.id == item['image_id']:
+                if x.id == item["image_id"]:
                     campaign_image = x
                     break
             else:
@@ -157,16 +168,16 @@ class Campaign(db.Model):
             # Create label object and add to campaign image object. If a
             # translated label is provided, use this as translated label.
             # Otherwise, use the label for both.
-            for o in item['objects']:
+            for o in item["objects"]:
                 o = Object(
                     campaign_image=campaign_image,
-                    label_translated=o.get('label_translated', o['label']),
-                    label_original=o['label'],
-                    confidence=o.get('confidence'),
-                    x_min=o['bounding_box']['xmin'],
-                    x_max=o['bounding_box']['xmax'],
-                    y_min=o['bounding_box']['ymin'],
-                    y_max=o['bounding_box']['ymax']
+                    label_translated=o.get("label_translated", o["label"]),
+                    label_original=o["label"],
+                    confidence=o.get("confidence"),
+                    x_min=o["bounding_box"]["xmin"],
+                    x_max=o["bounding_box"]["xmax"],
+                    y_min=o["bounding_box"]["ymin"],
+                    y_max=o["bounding_box"]["ymax"]
                 )
                 db.session.add(o)
 
@@ -178,15 +189,15 @@ class Campaign(db.Model):
 
         # Check if all campaign_images are labeled
         if all([x.labeled for x in self.campaign_images]):
-            self.change_status('completed')
+            self.change_status("completed")
 
         return True, None, None
 
     allowed_status_transitions = {
-        'created': ['active'],
-        'active': ['completed'],
-        'completed': ['finished'],
-        'finished': []
+        "created": ["active"],
+        "active": ["completed"],
+        "completed": ["finished"],
+        "finished": []
     }
 
     def change_status(self, desired_status):
@@ -198,13 +209,16 @@ class Campaign(db.Model):
         :returns boolean:       Success or not
         """
         if desired_status not in self.allowed_status_transitions[self.status]:
+            logger.warning(
+                f"Attempting invalid status transition on campaign: "
+                f"{self.status} to {desired_status}")
             return False
 
         self.status = desired_status
         db.session.commit()
 
         # Handle finishing actions
-        if self.status == 'finished':
+        if self.status == "finished":
             t = Thread(
                 target=self.finish_campaign,
                 args=(
@@ -224,13 +238,13 @@ class Campaign(db.Model):
         to Azure ML: The images as <campaign_title>_images and the labels as
         <campaign_title>_labels.
 
-        Is meant to be run as a thread.
+        Is meant to be run as a thread, to allow the API to return.
 
         TODO: For future improvements, consider detecting the datastore based
               on the container component of the image path. For now this does
               not seem to be necessary, as we'll only use one container.
         """
-        logger.info("Starting thread for finishing campaign")
+        logger.info("Started thread for finishing campaign")
         paths = []
         labels = []
         campaign_title = campaign_title.lower().replace(" ", "-")
@@ -240,26 +254,25 @@ class Campaign(db.Model):
                 CampaignImage.campaign_id == campaign_id).all()
             for campaign_image in campaign_images:
                 path = campaign_image.image.blobstorage_path
-                path = path.lstrip('/')
-                container = path.split("/")[0]
+                path = path.lstrip("/")
                 filepath = "/".join(path.split("/")[1:])
 
                 paths.append(filepath)
 
                 # Determine all objects and add to list.
                 labels.append({
-                    'image_url': filepath,
-                    'label': [
+                    "image_url": filepath,
+                    "label": [
                         {
-                            'label': x.label_translated,
-                            'bottomX': x.x_min,
-                            'topX': x.x_max,
-                            'bottomY': x.y_min,
-                            'topY': x.y_max
+                            "label": x.label_translated,
+                            "bottomX": x.x_min,
+                            "topX": x.x_max,
+                            "bottomY": x.y_min,
+                            "topY": x.y_max
                         }
                         for x in campaign_image.objects
                     ],
-                    'label_confidence': [
+                    "label_confidence": [
                         x.confidence for x in campaign_image.objects
                     ]
                 })
@@ -282,7 +295,7 @@ class Campaign(db.Model):
             logger.info(
                 f"Exported labels to AzureML dataset {campaign_title}_labels")
 
-            logger.info("Thread for finishing capaign set done")
+            logger.info("Thread for finishing campaign set done")
 
     @staticmethod
     def create(labeler_email, title, created_by, metadata=None,
@@ -325,7 +338,7 @@ class Campaign(db.Model):
         db.session.commit()
 
         response = campaign.to_dict()
-        response['access_token'] = {
+        response["access_token"] = {
             "apikey": key,
             "apisecret": secret
         }
@@ -335,9 +348,9 @@ class Campaign(db.Model):
 class CampaignImage(db.Model):
     __tablename__ = "campaign_image"
     id = db.Column(db.Integer, primary_key=True, unique=True)
-    campaign_id = db.Column(db.Integer, db.ForeignKey('campaign.id'),
+    campaign_id = db.Column(db.Integer, db.ForeignKey("campaign.id"),
                             nullable=False)
-    image_id = db.Column(db.Integer, db.ForeignKey('image.id'),
+    image_id = db.Column(db.Integer, db.ForeignKey("image.id"),
                          nullable=False)
     labeled = db.Column(db.Boolean, nullable=False, default=False)
 
@@ -357,14 +370,14 @@ class CampaignImage(db.Model):
     )
 
     def __repr__(self):
-        return '<CampaignImage %r-%r>' % (self.campaign, self.image)
+        return "<CampaignImage %r-%r>" % (self.campaign, self.image)
 
     def to_dict(self):
         return {
-            'campaignimage_id': self.id,
-            'campaign_id': self.campaign_id,
-            'image_id': self.image_id,
-            'labeled': self.labeled
+            "campaignimage_id": self.id,
+            "campaign_id": self.campaign_id,
+            "image_id": self.image_id,
+            "labeled": self.labeled
         }
 
     def delete_objects(self, commit=True):

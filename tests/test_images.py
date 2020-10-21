@@ -2,7 +2,7 @@ import datetime
 from common.azure import AzureWrapper
 from tests.shared import get_headers, add_user, add_imagesets, add_images, \
     add_campaigns, add_image_to_campaign, add_object, create_basic_testset, \
-        add_images_campaigns, add_labeler_user
+    add_images_campaigns, add_labeler_user
 
 
 def test_list_images(client, app, db, mocker):
@@ -529,7 +529,6 @@ def test_images_get_link_with_user_key(client, app, db, mocker):
     headers = get_headers(db)
 
     now, yesterday = create_basic_testset(db)
-
 
     mocker.patch(
         "models.image.AzureWrapper.get_sas_url",

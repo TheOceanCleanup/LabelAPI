@@ -990,8 +990,8 @@ def test_add_objects_to_images_in_campaign_with_user_key(client, app, db,
     assert img2.objects[1].label_translated == "Metal" \
         and img2.objects[1].label_original == "Metal"
 
-    assert img1.labeled == True
-    assert img2.labeled == True
+    assert img1.labeled
+    assert img2.labeled
     assert campaign.status == 'completed'
 
 
@@ -1076,10 +1076,10 @@ def test_add_objects_to_images_in_campaign_with_translations(client, app, db,
         and img1.objects[1].label_original == "Tree"
 
     # Good spot to check if the labeling progress is done correctly
-    assert img1.labeled == True
+    assert img1.labeled
 
     img2 = CampaignImage.query.filter(CampaignImage.image_id == 2).first()
-    assert img2.labeled == False
+    assert not img2.labeled
     assert campaign.status == 'active'
 
 
@@ -1126,6 +1126,7 @@ def test_add_objects_to_images_in_campaign_with_confidence(client, app, db,
     assert img1.objects[0].label_translated == "Plastic"
     assert img1.objects[1].label_translated == "Organic"
 
+
 def test_add_objects_to_images_in_campaign_overwrite_existing(client, app, db,
                                                               mocker):
     headers = get_headers(db)
@@ -1171,6 +1172,7 @@ def test_add_objects_to_images_in_campaign_overwrite_existing(client, app, db,
     # retained over the new ones
     assert img1.objects[0].label_translated == "Plastic"
     assert img1.objects[1].label_translated == "Organic"
+
 
 def test_add_objects_to_images_in_campaign_image_doesnt_exist(client, app, db,
                                                               mocker):

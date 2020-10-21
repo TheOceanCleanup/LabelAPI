@@ -4,6 +4,9 @@ from sqlalchemy.orm import validates
 import bcrypt
 import flask_login
 import secrets
+import logging
+
+logger = logging.getLogger("label-api")
 
 
 class User(db.Model, flask_login.UserMixin):
@@ -20,11 +23,11 @@ class User(db.Model, flask_login.UserMixin):
     roles = db.relationship("Role", back_populates="user")
 
     def __repr__(self):
-        return '<User %r>' % self.email
+        return "<User %r>" % self.email
 
-    @validates('email')
+    @validates("email")
     def validate_email(self, key, value):
-        assert value != ''
+        assert value != ""
         return value
 
     def is_active(self):
@@ -34,12 +37,28 @@ class User(db.Model, flask_login.UserMixin):
         return bcrypt.checkpw(api_secret.encode(), self.API_SECRET)
 
     def has_role(self, role):
+        """
+        Check if a user has a specific role, but only when no subject is set
+        for this role (for subject-bound roles, use User.has_role_on_subject).
+
+        :param role:            Name of the role
+        :returns:               Boolean indicating access.
+        """
         return any([
-            x.role == role
+            x.role == role and x.subject_type is None and x.subject_id is None
             for x in self.roles
         ])
 
     def has_role_on_subject(self, role, subject_type, subject_id):
+        """
+        Check if a user has a certain role on a provided subject, by checking
+        if any of his roles match.
+
+        :param role:            Name of the role
+        :param subject_type:    Type of the role subject (eg "campaign")
+        :param subject_id:      ID of the role subject
+        :returns:               Boolean indicating access.
+        """
         return any([
             x.has_role_on_subject(role, subject_type, subject_id)
             for x in self.roles
@@ -55,20 +74,29 @@ class User(db.Model, flask_login.UserMixin):
         """
         return any([
             self.has_role_on_subject(
-                'labeler',
-                'campaign',
+                "labeler",
+                "campaign",
                 campaign_image.campaign_id
             )
             for campaign_image in image.campaign_images
         ])
 
     def generate_api_key(self):
+        """
+        Generate a new API key and secret for the user. The secret is stored in
+        hashed form.
+
+        :returns:       A tuple containing the key and the secret. This is the
+                        only time the secret is known as plain text.
+        """
         api_key = secrets.token_hex(16)
         api_secret = secrets.token_hex(16)
         hashed = bcrypt.hashpw(api_secret.encode(), bcrypt.gensalt())
         self.API_KEY = api_key
         self.API_SECRET = hashed
         db.session.commit()
+
+        logger.info("Generated new API key for %s" % self.email)
 
         return api_key, api_secret
 
@@ -88,10 +116,10 @@ class Role(db.Model):
     __tablename__ = "roles"
     id = db.Column(db.Integer, primary_key=True, unique=True)
     role = db.Column(
-        db.Enum('image-admin', 'labeler', name="role_types"),
+        db.Enum("image-admin", "labeler", name="role_types"),
         nullable=False
     )
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
     subject_type = db.Column(db.String(128))
     subject_id = db.Column(db.Integer)
 
@@ -102,6 +130,14 @@ class Role(db.Model):
     )
 
     def has_role_on_subject(self, role, subject_type, subject_id):
+        """
+        Check if a role object has a certain role on a provided subject.
+
+        :param role:            Name of the role
+        :param subject_type:    Type of the role subject (eg "campaign")
+        :param subject_id:      ID of the role subject
+        :returns:               Boolean indicating access.
+        """
         return self.subject_type == subject_type \
             and self.subject_id == subject_id \
             and (role is None or role == self.role)

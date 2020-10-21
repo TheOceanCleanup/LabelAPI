@@ -12,6 +12,7 @@ import os
 # Set up logging
 logger = create_logger(os.environ.get('LOGLEVEL', 'INFO'))
 
+
 class App:
 
     instance = None

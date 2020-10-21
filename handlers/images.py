@@ -2,6 +2,9 @@ from common.auth import flask_login
 from flask import abort, redirect
 from models.image import Image
 from models.campaign import Campaign
+import logging
+
+logger = logging.getLogger("label-api")
 
 
 @flask_login.login_required
@@ -12,21 +15,22 @@ def list_images(page=1, per_page=10):
     List all images
     """
     # Check if logged in user has correct permissions
-    if not flask_login.current_user.has_role('image-admin'):
+    if not flask_login.current_user.has_role("image-admin"):
+        logger.warning("User not authorized")
         abort(401)
 
     images = Image.query.order_by(Image.id).paginate(page=page,
                                                      per_page=per_page)
     return {
-        'pagination': {
-            'page': images.page,
-            'pages': images.page,
-            'total': images.total,
-            'per_page': images.per_page,
-            'prev': (images.prev_num if images.has_prev else None),
-            'next': (images.next_num if images.has_next else None)
+        "pagination": {
+            "page": images.page,
+            "pages": images.page,
+            "total": images.total,
+            "per_page": images.per_page,
+            "prev": (images.prev_num if images.has_prev else None),
+            "next": (images.next_num if images.has_next else None)
         },
-        'images': [x.to_dict() for x in images.items]
+        "images": [x.to_dict() for x in images.items]
     }
 
 
@@ -37,6 +41,11 @@ def get_image_url(image_id):
 
     Get an image. If authenticated, this will redirect to the actual image in
     blobstorage, with a SAS token for access.
+
+    NOTE: This is implemented the "user-friendly" way. Alternatively, the
+          check if a user has access to the image
+          (current_user.has_access_to_image(image)) could return 404 as well,
+          preventing a non-authorized user from knowing what images exist.
     """
     # First get image object
     image = Image.query.get(image_id)
@@ -44,8 +53,9 @@ def get_image_url(image_id):
         abort(404, "Image does not exist")
 
     # Check permissions for the image
-    if not (flask_login.current_user.has_role('image-admin') \
+    if not (flask_login.current_user.has_role("image-admin")
             or flask_login.current_user.has_access_to_image(image)):
+        logger.warning("User not authorized")
         abort(401)
 
     url = image.get_azure_url()
@@ -66,7 +76,8 @@ def get_objects(image_id, campaigns=[]):
     returned, prioritized by the most recent campaign.
     """
     # Check if logged in user has correct permissions
-    if not flask_login.current_user.has_role('image-admin'):
+    if not flask_login.current_user.has_role("image-admin"):
+        logger.warning("User not authorized")
         abort(401)
 
     image = Image.query.get(image_id)

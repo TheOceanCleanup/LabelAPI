@@ -16,7 +16,7 @@ class Image(db.Model):
     __tablename__ = "image"
     id = db.Column(db.Integer, primary_key=True, unique=True)
     blobstorage_path = db.Column(db.String(1024), nullable=False, unique=True)
-    imageset_id = db.Column(db.Integer, db.ForeignKey('imageset.id'),
+    imageset_id = db.Column(db.Integer, db.ForeignKey("imageset.id"),
                             nullable=True)
     date_taken = db.Column(db.DateTime, nullable=True)
     location_description = db.Column(db.String(1024), nullable=True)
@@ -44,36 +44,36 @@ class Image(db.Model):
     )
 
     def __repr__(self):
-        return '<Image %r>' % self.blobstorage_path
+        return "<Image %r>" % self.blobstorage_path
 
     def to_dict(self):
         if self.imageset is not None:
             imageset = {
-                'imageset_id': self.imageset.id,
-                'title': self.imageset.title
+                "imageset_id": self.imageset.id,
+                "title": self.imageset.title
             }
         else:
             imageset = None
 
         return {
-            'image_id': self.id,
-            'blobstorage_path': self.blobstorage_path,
-            'imageset': imageset,
-            'date_taken': self.date_taken,
-            'location': {
-                'description': self.location_description,
-                'lat': self.lat,
-                'lon': self.lon
+            "image_id": self.id,
+            "blobstorage_path": self.blobstorage_path,
+            "imageset": imageset,
+            "date_taken": self.date_taken,
+            "location": {
+                "description": self.location_description,
+                "lat": self.lat,
+                "lon": self.lon
             },
-            'type': self.type,
-            'metadata': self.meta_data,
-            'tss_id': self.tss_id,
-            'file': {
-                'filetype': self.filetype,
-                'filesize': self.filesize,
-                'dimensions': {
-                    'width': self.width,
-                    'height': self.height
+            "type": self.type,
+            "metadata": self.meta_data,
+            "tss_id": self.tss_id,
+            "file": {
+                "filetype": self.filetype,
+                "filesize": self.filesize,
+                "dimensions": {
+                    "width": self.width,
+                    "height": self.height
                 }
             }
         }
@@ -90,15 +90,15 @@ class Image(db.Model):
         """
         return AzureWrapper.get_sas_url(
             self.blobstorage_path,
-            expires=datetime.utcnow() + \
-                timedelta(days=int(os.environ.get("IMAGE_READ_TOKEN_VALID_DAYS",
-                                                  7))),
+            expires=datetime.utcnow() + timedelta(
+                days=int(os.environ.get("IMAGE_READ_TOKEN_VALID_DAYS", 7))
+            ),
             permissions=["read"]
         )
 
     def get_objects(self, campaigns=[]):
         """
-        Get the objects in this image. If these exist for multiple  campaigns,
+        Get the objects in this image. If these exist for multiple campaigns,
         priotize them either by the provided campaigns (in that order) or by
         date of the latest campaign otherwise. In the second case, only labels
         from finished campaigns will be returned.
@@ -123,7 +123,7 @@ class Image(db.Model):
             # Find the most recent finished campaign
             finished_campaign_images = [
                 x for x in self.campaign_images
-                if x.campaign.status == 'finished'
+                if x.campaign.status == "finished"
             ]
             if len(finished_campaign_images) > 0:
                 campaign_image = sorted(finished_campaign_images,
@@ -141,16 +141,16 @@ class ImageSet(db.Model):
     id = db.Column(db.Integer, primary_key=True, unique=True)
     title = db.Column(db.String(128), nullable=False, unique=True)
     status = db.Column(
-        db.Enum('created', 'finished', name="imageset_status"),
+        db.Enum("created", "finished", name="imageset_status"),
         nullable=False,
-        default='created'
+        default="created"
     )
     meta_data = db.Column(JSONB, name="metadata", nullable=True)
     blobstorage_path = db.Column(db.String(1024), nullable=True, unique=True)
     date_created = db.Column(db.DateTime, nullable=False,
                              server_default=db.func.now())
     date_finished = db.Column(db.DateTime, nullable=True)
-    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'),
+    created_by_id = db.Column(db.Integer, db.ForeignKey("user.id"),
                               name="created_by", nullable=False)
 
     created_by = db.relationship(
@@ -164,18 +164,18 @@ class ImageSet(db.Model):
     )
 
     def __repr__(self):
-        return '<ImageSet %r>' % self.title
+        return "<ImageSet %r>" % self.title
 
     def to_dict(self):
         return {
-            'imageset_id': self.id,
-            'title': self.title,
-            'status': self.status,
-            'metadata': self.meta_data,
-            'blobstorage_path': self.blobstorage_path,
-            'date_created': self.date_created,
-            'date_finished': self.date_finished,
-            'created_by': self.created_by.email
+            "imageset_id": self.id,
+            "title": self.title,
+            "status": self.status,
+            "metadata": self.meta_data,
+            "blobstorage_path": self.blobstorage_path,
+            "date_created": self.date_created,
+            "date_finished": self.date_finished,
+            "created_by": self.created_by.email
         }
 
     def get_images_paginated(self, page=1, per_page=10):
@@ -185,8 +185,8 @@ class ImageSet(db.Model):
             .paginate(page=page, per_page=per_page)
 
     allowed_status_transitions = {
-        'created': ['finished'],
-        'finished': []
+        "created": ["finished"],
+        "finished": []
     }
 
     def change_status(self, desired_status):
@@ -198,22 +198,25 @@ class ImageSet(db.Model):
         :returns boolean:       Success or not
         """
         if desired_status not in self.allowed_status_transitions[self.status]:
+            logger.warning(
+                f"Attempting invalid status transition on image set: "
+                f"{self.status} to {desired_status}")
             return False
 
         self.status = desired_status
         db.session.commit()
 
         # Handle finishing actions
-        if self.status == 'finished':
+        if self.status == "finished":
             t = Thread(
                 target=self.finish_set,
-                args=(current_app._get_current_object(), db)
+                args=(current_app._get_current_object(), db, self.id)
             )
             t.start()
 
         return True
 
-    def finish_set(self, app, db):
+    def finish_set(self, app, db, imgset_id):
         """
         Perform the finishing actions on an image set. This is the following:
         - Copy the files from the temporary dropbox to the final location
@@ -232,13 +235,16 @@ class ImageSet(db.Model):
                             flask.current_app._get_current_object())
         :param db:          The database object
         """
-        logger.info("Starting thread for finishing image set")
+        logger.info("Started thread for finishing image set")
+
+        # Load the object again, to prevent any DB/threading issues
+        imgset = db.session.query(ImageSet).get(imgset_id)
 
         target_container = os.environ["AZURE_STORAGE_IMAGESET_CONTAINER"]
         folder_name = os.environ["AZURE_STORAGE_IMAGESET_FOLDER"] + "/" + \
-                      self.title.lower().replace(" ", "-")
+            imgset.title.lower().replace(" ", "-")
 
-        dropbox = self.blobstorage_path
+        dropbox = imgset.blobstorage_path
 
         # Copy all files from dropbox to final folder
         files = AzureWrapper.copy_contents(
@@ -248,11 +254,14 @@ class ImageSet(db.Model):
             folder_name
         )
 
-        logger.debug("Files copied")
-
         if not files:
             # Failed to copy
+            logger.warning(
+                "Failed to copy images from dropbox to uploads folder, "
+                "possibly partially")
             return
+
+        logger.debug("Files copied")
 
         with app.app_context():
             # Add images to DB
@@ -266,7 +275,7 @@ class ImageSet(db.Model):
 
                 img = Image(
                     blobstorage_path=path,
-                    imageset=self,
+                    imageset=imgset,
                     filetype=filetype,
                     filesize=f.properties.content_length,
                     width=width,
@@ -275,7 +284,7 @@ class ImageSet(db.Model):
                 db.session.add(img)
 
             # Change blobstorage path
-            self.blobstorage_path = f"{target_container}/{folder_name}"
+            imgset.blobstorage_path = f"{target_container}/{folder_name}"
 
             db.session.commit()
 
@@ -293,7 +302,7 @@ class ImageSet(db.Model):
         image set is "created".
 
         :params images:     List of images to add. Provided as objects, either
-                            with 'id' or as 'filepath' as sole property.
+                            with "id" or as "filepath" as sole property.
         :returns boolean:   Success or not
         :returns int:       Status code in case of failure - 404 if image does
                             not exist, 400 if invalid request or 409 if status
@@ -301,7 +310,8 @@ class ImageSet(db.Model):
                             attached to another set
         :returns string:    Error message in case of failure
         """
-        if self.status != 'created':
+        if self.status != "created":
+            logger.warning(f"Trying to add images to {self.status} image set")
             return False, 409, \
                 f'Not allowed to add images while status is "{self.status}"'
 
@@ -309,11 +319,11 @@ class ImageSet(db.Model):
             # Find image.
             # NOTE: Connexion has already validated for us that either id or
             #       filepath exists, hence the simple else statement
-            if 'id' in i:
-                image = Image.query.get(i['id'])
+            if "id" in i:
+                image = Image.query.get(i["id"])
             else:
                 image = Image.query\
-                        .filter(Image.blobstorage_path == i['filepath'])\
+                        .filter(Image.blobstorage_path == i["filepath"])\
                         .first()
 
             # Check if image exists
@@ -353,6 +363,8 @@ class ImageSet(db.Model):
         if ImageSet.query.filter(
                     db.func.lower(ImageSet.title) == title.lower()
                 ).first() is not None:
+            logger.info(
+                "Trying to create image set with already existing name")
             return False, 409, "Image Set title is already taken"
 
         # Create dropbox container on blobstorage
@@ -372,10 +384,8 @@ class ImageSet(db.Model):
         response = imageset.to_dict()
         response["dropbox_url"] = AzureWrapper.get_container_sas_url(
             created_container,
-            expires=datetime.utcnow() + \
-                    timedelta(days=int(
-                        os.environ.get("IMAGESET_UPLOAD_TOKEN_VALID_DAYS", 7))
-                    ),
+            expires=datetime.utcnow() + timedelta(days=int(
+                os.environ.get("IMAGESET_UPLOAD_TOKEN_VALID_DAYS", 7))),
             permissions=["write", "list", "read", "delete"]
         )
 

@@ -1,6 +1,9 @@
 from common.auth import flask_login
 from models.campaign import Campaign, CampaignImage
 from flask import abort
+import logging
+
+logger = logging.getLogger('label-api')
 
 
 @flask_login.login_required
@@ -11,21 +14,22 @@ def list_campaigns(page=1, per_page=10):
     List all the labeling campaigns in the database
     """
     # Check if logged in user has correct permissions
-    if not flask_login.current_user.has_role('image-admin'):
+    if not flask_login.current_user.has_role("image-admin"):
+        logger.warning("User not authorized")
         abort(401)
 
     campaigns = Campaign.query.order_by(Campaign.id)\
                               .paginate(page=page, per_page=per_page)
     return {
-        'pagination': {
-            'page': campaigns.page,
-            'pages': campaigns.page,
-            'total': campaigns.total,
-            'per_page': campaigns.per_page,
-            'prev': (campaigns.prev_num if campaigns.has_prev else None),
-            'next': (campaigns.next_num if campaigns.has_next else None)
+        "pagination": {
+            "page": campaigns.page,
+            "pages": campaigns.page,
+            "total": campaigns.total,
+            "per_page": campaigns.per_page,
+            "prev": (campaigns.prev_num if campaigns.has_prev else None),
+            "next": (campaigns.next_num if campaigns.has_next else None)
         },
-        'campaigns': [x.to_dict() for x in campaigns.items]
+        "campaigns": [x.to_dict() for x in campaigns.items]
     }
 
 
@@ -37,7 +41,8 @@ def get_metadata(campaign_id):
     Get the metadata of a given campaign
     """
     # Check if logged in user has correct permissions
-    if not flask_login.current_user.has_role('image-admin'):
+    if not flask_login.current_user.has_role("image-admin"):
+        logger.warning("User not authorized")
         abort(401)
 
     campaign = Campaign.query.get(campaign_id)
@@ -55,14 +60,15 @@ def change_status(campaign_id, body):
     Change the status of a campaign
     """
     # Check if logged in user has correct permissions
-    if not flask_login.current_user.has_role('image-admin'):
+    if not flask_login.current_user.has_role("image-admin"):
+        logger.warning("User not authorized")
         abort(401)
 
     campaign = Campaign.query.get(campaign_id)
     if campaign is None:
         abort(404, "Campaign Set does not exist")
 
-    if campaign.change_status(body['new_status']):
+    if campaign.change_status(body["new_status"]):
         return "ok"
     else:
         abort(
@@ -81,7 +87,8 @@ def get_objects(campaign_id, page=1, per_page=1000):
     the objects found in that image.
     """
     # Check if logged in user has correct permissions.
-    if not flask_login.current_user.has_role('image-admin'):
+    if not flask_login.current_user.has_role("image-admin"):
+        logger.warning("User not authorized")
         abort(401)
 
     campaign = Campaign.query.get(campaign_id)
@@ -94,15 +101,15 @@ def get_objects(campaign_id, page=1, per_page=1000):
                             .order_by(CampaignImage.id)\
                             .paginate(page=page, per_page=per_page)
     return {
-        'pagination': {
-            'page': c_images.page,
-            'pages': c_images.page,
-            'total': c_images.total,
-            'per_page': c_images.per_page,
-            'prev': (c_images.prev_num if c_images.has_prev else None),
-            'next': (c_images.next_num if c_images.has_next else None)
+        "pagination": {
+            "page": c_images.page,
+            "pages": c_images.page,
+            "total": c_images.total,
+            "per_page": c_images.per_page,
+            "prev": (c_images.prev_num if c_images.has_prev else None),
+            "next": (c_images.next_num if c_images.has_next else None)
         },
-        'images': [
+        "images": [
             {
                 "image_id": x.image.id,
                 "url": x.image.get_api_url(),
@@ -126,12 +133,13 @@ def get_images(campaign_id, page=1, per_page=1000):
     # Check if logged in user has correct permissions. Can be either
     # image-admin or labeler on the specific campaign
     if not (
-            flask_login.current_user.has_role('image-admin') or
+            flask_login.current_user.has_role("image-admin") or
             flask_login.current_user.has_role_on_subject(
-                'labeler',
-                'campaign',
+                "labeler",
+                "campaign",
                 campaign_id)
             ):
+        logger.warning("User not authorized")
         abort(401)
 
     campaign = Campaign.query.get(campaign_id)
@@ -144,15 +152,15 @@ def get_images(campaign_id, page=1, per_page=1000):
                             .order_by(CampaignImage.id)\
                             .paginate(page=page, per_page=per_page)
     return {
-        'pagination': {
-            'page': c_images.page,
-            'pages': c_images.page,
-            'total': c_images.total,
-            'per_page': c_images.per_page,
-            'prev': (c_images.prev_num if c_images.has_prev else None),
-            'next': (c_images.next_num if c_images.has_next else None)
+        "pagination": {
+            "page": c_images.page,
+            "pages": c_images.page,
+            "total": c_images.total,
+            "per_page": c_images.per_page,
+            "prev": (c_images.prev_num if c_images.has_prev else None),
+            "next": (c_images.next_num if c_images.has_next else None)
         },
-        'images': [
+        "images": [
             {
                 "image_id": x.image.id,
                 "url": x.image.get_api_url()
@@ -173,20 +181,21 @@ def add_campaign(body):
     already has a key. If not, create.
     """
     # Check if logged in user has correct permissions.
-    if not flask_login.current_user.has_role('image-admin'):
+    if not flask_login.current_user.has_role("image-admin"):
+        logger.warning("User not authorized")
         abort(401)
 
     # Check if there's already a campaign with this title
-    if Campaign.query.filter(Campaign.title == body['title']).first() \
+    if Campaign.query.filter(Campaign.title == body["title"]).first() \
             is not None:
         abort(409, "Another campaign with this name already exists")
 
     response = Campaign.create(
-        body['labeler_email'],
-        body['title'],
+        body["labeler_email"],
+        body["title"],
         flask_login.current_user,
-        metadata=body.get('metadata', None),
-        label_translations=body.get('label_translations', None)
+        metadata=body.get("metadata", None),
+        label_translations=body.get("label_translations", None)
     )
 
     return response
@@ -202,7 +211,8 @@ def add_images(campaign_id, body):
     Note: Can only add to created set
     """
     # Check if logged in user has correct permissions
-    if not flask_login.current_user.has_role('image-admin'):
+    if not flask_login.current_user.has_role("image-admin"):
+        logger.warning("User not authorized")
         abort(401)
 
     campaign = Campaign.query.get(campaign_id)
@@ -228,12 +238,13 @@ def add_objects(campaign_id, body):
     # Check if logged in user has correct permissions. Can be either
     # image-admin or labeler on the specific campaign
     if not (
-            flask_login.current_user.has_role('image-admin') or
+            flask_login.current_user.has_role("image-admin") or
             flask_login.current_user.has_role_on_subject(
-                'labeler',
-                'campaign',
+                "labeler",
+                "campaign",
                 campaign_id)
             ):
+        logger.warning("User not authorized")
         abort(401)
 
     campaign = Campaign.query.get(campaign_id)

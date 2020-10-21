@@ -1,4 +1,4 @@
-from flask import has_request_context, request, current_app
+from flask import has_request_context, request
 import logging
 import flask_login
 import sys

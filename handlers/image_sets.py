@@ -1,6 +1,9 @@
 from common.auth import flask_login
 from models.image import ImageSet
 from flask import abort
+import logging
+
+logger = logging.getLogger('label-api')
 
 
 @flask_login.login_required
@@ -11,22 +14,23 @@ def list_imagesets(page=1, per_page=10):
     Return list of image sets
     """
     # Check if logged in user has correct permissions
-    if not flask_login.current_user.has_role('image-admin'):
+    if not flask_login.current_user.has_role("image-admin"):
+        logger.warning("User not authorized")
         abort(401)
 
     imagesets = ImageSet.query\
                         .order_by(ImageSet.id)\
                         .paginate(page=page, per_page=per_page)
     return {
-        'pagination': {
-            'page': imagesets.page,
-            'pages': imagesets.page,
-            'total': imagesets.total,
-            'per_page': imagesets.per_page,
-            'prev': (imagesets.prev_num if imagesets.has_prev else None),
-            'next': (imagesets.next_num if imagesets.has_next else None)
+        "pagination": {
+            "page": imagesets.page,
+            "pages": imagesets.page,
+            "total": imagesets.total,
+            "per_page": imagesets.per_page,
+            "prev": (imagesets.prev_num if imagesets.has_prev else None),
+            "next": (imagesets.next_num if imagesets.has_next else None)
         },
-        'image_sets': [x.to_dict() for x in imagesets.items]
+        "image_sets": [x.to_dict() for x in imagesets.items]
     }
 
 
@@ -38,7 +42,8 @@ def add_imageset(body):
     Create a new image set
     """
     # Check if logged in user has correct permissions
-    if not flask_login.current_user.has_role('image-admin'):
+    if not flask_login.current_user.has_role("image-admin"):
+        logger.warning("User not authorized")
         abort(401)
 
     success, sc, response = ImageSet.create(
@@ -61,14 +66,15 @@ def change_status(imageset_id, body):
     Change the status of an image set
     """
     # Check if logged in user has correct permissions
-    if not flask_login.current_user.has_role('image-admin'):
+    if not flask_login.current_user.has_role("image-admin"):
+        logger.warning("User not authorized")
         abort(401)
 
     imageset = ImageSet.query.get(imageset_id)
     if imageset is None:
         abort(404, "Image Set does not exist")
 
-    if imageset.change_status(body['new_status']):
+    if imageset.change_status(body["new_status"]):
         return "ok"
     else:
         abort(
@@ -86,7 +92,8 @@ def get_images(imageset_id, page=1, per_page=10):
     List all the images in the image set, as ID and download path.
     """
     # Check if logged in user has correct permissions
-    if not flask_login.current_user.has_role('image-admin'):
+    if not flask_login.current_user.has_role("image-admin"):
+        logger.warning("User not authorized")
         abort(401)
 
     imageset = ImageSet.query.get(imageset_id)
@@ -95,15 +102,15 @@ def get_images(imageset_id, page=1, per_page=10):
 
     images = imageset.get_images_paginated(page, per_page)
     return {
-        'pagination': {
-            'page': images.page,
-            'pages': images.page,
-            'total': images.total,
-            'per_page': images.per_page,
-            'prev': (images.prev_num if images.has_prev else None),
-            'next': (images.next_num if images.has_next else None)
+        "pagination": {
+            "page": images.page,
+            "pages": images.page,
+            "total": images.total,
+            "per_page": images.per_page,
+            "prev": (images.prev_num if images.has_prev else None),
+            "next": (images.next_num if images.has_next else None)
         },
-        'images': [x.to_dict() for x in images.items]
+        "images": [x.to_dict() for x in images.items]
     }
 
 
@@ -117,7 +124,8 @@ def add_images(imageset_id, body):
     Note: Can only add to "created" status set
     """
     # Check if logged in user has correct permissions
-    if not flask_login.current_user.has_role('image-admin'):
+    if not flask_login.current_user.has_role("image-admin"):
+        logger.warning("User not authorized")
         abort(401)
 
     imageset = ImageSet.query.get(imageset_id)

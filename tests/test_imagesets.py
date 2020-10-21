@@ -168,6 +168,7 @@ def test_new_imageset_already_exists(client, app, db, mocker):
 
     assert response.status_code == 409
 
+
 def test_new_imageset_azure_failure(client, app, db, mocker):
     headers = get_headers(db)
     json_payload = {
@@ -197,6 +198,7 @@ def test_new_imageset_azure_failure(client, app, db, mocker):
 class DummyProperties:
     def __init__(self, content_length):
         self.content_length = content_length
+
 
 class DummyFile:
     def __init__(self, name, properties):
@@ -267,7 +269,7 @@ def test_set_finish(client, app, db, mocker):
         "models.image.AzureWrapper.delete_container"
     )
 
-    imgset1.finish_set(app, db)
+    imgset1.finish_set(app, db, 1)
 
     AzureWrapper.copy_contents.assert_called_once_with(
         "/some/otherpath",
@@ -284,13 +286,13 @@ def test_set_finish(client, app, db, mocker):
     )
 
     img1 = db.session.query(Image)\
-                     .filter(Image.blobstorage_path == \
-                             "upload-container/uploads/some-image-set/file1")\
-                     .first()
+        .filter(Image.blobstorage_path ==
+                "upload-container/uploads/some-image-set/file1")\
+        .first()
     img2 = db.session.query(Image)\
-                     .filter(Image.blobstorage_path == \
-                             "upload-container/uploads/some-image-set/file1")\
-                     .first()
+        .filter(Image.blobstorage_path ==
+                "upload-container/uploads/some-image-set/file1")\
+        .first()
     imgset1 = db.session.query(ImageSet).get(1)
 
     assert img1 is not None
@@ -321,7 +323,7 @@ def test_set_finish_copy_failed(client, app, db, mocker):
         "models.image.AzureWrapper.delete_container"
     )
 
-    imgset1.finish_set(app, db)
+    imgset1.finish_set(app, db, 1)
 
     AzureWrapper.copy_contents.assert_called_once_with(
         "/some/otherpath",
@@ -332,15 +334,14 @@ def test_set_finish_copy_failed(client, app, db, mocker):
     AzureWrapper.get_image_information.assert_not_called()
     AzureWrapper.delete_container.assert_not_called()
 
-
     img1 = db.session.query(Image)\
-                     .filter(Image.blobstorage_path == \
-                             "upload-container/uploads/some-image-set/file1")\
-                     .first()
+        .filter(Image.blobstorage_path ==
+                "upload-container/uploads/some-image-set/file1")\
+        .first()
     img2 = db.session.query(Image)\
-                     .filter(Image.blobstorage_path == \
-                             "upload-container/uploads/some-image-set/file1")\
-                     .first()
+        .filter(Image.blobstorage_path ==
+                "upload-container/uploads/some-image-set/file1")\
+        .first()
     imgset1 = db.session.query(ImageSet).get(1)
 
     assert img1 is None
