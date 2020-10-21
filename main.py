@@ -6,8 +6,11 @@ from models.object import Object
 from models.user import User
 from common.db import db
 from common.auth import login_manager
+from common.logger import create_logger
 import os
 
+# Set up logging
+logger = create_logger(os.environ.get('LOGLEVEL', 'INFO'))
 
 class App:
 
@@ -59,6 +62,11 @@ def get_app():
 
 # Create Flask app object
 app = get_app().app
+
+
+@app.before_request
+def before_request_func():
+    logger.info("")
 
 
 @app.route("/info/version", methods=["GET"])
