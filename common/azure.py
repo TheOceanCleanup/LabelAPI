@@ -1,12 +1,15 @@
 from azure.storage.blob import BlockBlobService, BlobPermissions, \
     ContainerPermissions
 from azure.common import AzureException
+from azureml.core import Workspace, Dataset, Datastore
+from PIL import Image, UnidentifiedImageError
 #from retrying import retry
 from datetime import datetime, timedelta
-from PIL import Image, UnidentifiedImageError
+from pathlib import Path
 import logging
 import os
 import io
+import pandas as pd
 
 logger = logging.getLogger("label-api")
 
@@ -61,8 +64,6 @@ class AzureWrapper:
                                 "delete", "read", "write"].
         :returns:               The URL with key for the given image.
         """
-        assert "AZURE_STORAGE_CONNECTION_STRING" in os.environ
-
         block_blob_service = BlockBlobService(
             connection_string=os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         )
@@ -108,8 +109,6 @@ class AzureWrapper:
                                 "read", "write"].
         :returns:               The URL with key for the given image.
         """
-        assert "AZURE_STORAGE_CONNECTION_STRING" in os.environ
-
         block_blob_service = BlockBlobService(
             connection_string=os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         )
@@ -183,7 +182,6 @@ class AzureWrapper:
         :param target_folder:       Folder to copy to, as prefix
         :returns:                   List of all copied files
         """
-        assert "AZURE_STORAGE_CONNECTION_STRING" in os.environ
         block_blob_service = BlockBlobService(
             connection_string=os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         )
@@ -225,7 +223,6 @@ class AzureWrapper:
         :param container:    Container to delete
         :returns:            Boolean indicating success
         """
-        assert "AZURE_STORAGE_CONNECTION_STRING" in os.environ
         block_blob_service = BlockBlobService(
             connection_string=os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         )
@@ -251,8 +248,6 @@ class AzureWrapper:
         :returns:           Tuple containing: image type, image width,
                             image height
         """
-        assert "AZURE_STORAGE_CONNECTION_STRING" in os.environ
-
         block_blob_service = BlockBlobService(
             connection_string=os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         )
@@ -280,3 +275,123 @@ class AzureWrapper:
             return None, None, None
 
         return img.format, img.width, img.height
+
+    @staticmethod
+    def _get_workspace(subscription_id, resource_group, workspace_name):
+        """
+        Load the correct workspace
+
+        :param subscription_id:     Azure subscription
+        :param resource_group:      Azure resource group
+        :param workspace_name:      Name of the workspace
+        :returns:                   Azure ML Workspace object
+        """
+        return Workspace(subscription_id, resource_group, workspace_name)
+
+    @staticmethod
+    def _get_datastore(workspace, datastore_name):
+        """
+        Get a Datastore object
+
+        :param workspace:       Azure ML Workspace object
+        :param datastore_name:  Name of the datastore to load
+        :returns:               Azure ML Datastore object
+        """
+        return Datastore.get(workspace, datastore_name)
+
+    @staticmethod
+    def export_images_to_ML(name, description, images):
+        """
+        Export a list of images to an Azure ML dataset.
+
+        Requires the following environment variables to be set:
+        AZURE_STORAGE_CONNECTION_STRING
+        AZURE_ML_DATASTORE
+        AZURE_ML_SUBSCRIPTION_ID
+        AZURE_ML_RESOURCE_GROUP
+        AZURE_ML_WORKSPACE_NAME
+
+        :param name:        The name to give to the new dataset
+        :param description: Short description to give to the dataset
+        :param images:      A list of image paths relative to the datastore
+                            object in Azure ML.
+        """
+        ws = AzureWrapper._get_workspace(
+            os.environ["AZURE_ML_SUBSCRIPTION_ID"],
+            os.environ["AZURE_ML_RESOURCE_GROUP"],
+            os.environ["AZURE_ML_WORKSPACE_NAME"]
+        )
+        datastore = AzureWrapper._get_datastore(
+            ws,
+            os.environ["AZURE_ML_DATASTORE"]
+        )
+
+        paths = [(datastore, x) for x in images]
+
+        dataset = Dataset.File.from_files(
+            path=paths
+        )
+        dataset.register(
+            workspace=ws,
+            name=name,
+            description=description,
+            create_new_version=True
+        )
+
+    @staticmethod
+    def export_labels_to_ML(name, description, labels):
+        """
+        Export a list of labels to an Azure ML dataset.
+
+        Requires the following environment variables to be set:
+        AZURE_STORAGE_CONNECTION_STRING
+        AZURE_ML_DATASTORE
+        AZURE_ML_SUBSCRIPTION_ID
+        AZURE_ML_RESOURCE_GROUP
+        AZURE_ML_WORKSPACE_NAME
+
+        :param name:        The name to give to the new dataset
+        :param description: Short description to give to the dataset
+        :param labels:      A list of image paths relative to the datastore
+                            object in Azure ML.
+        """
+        ws = AzureWrapper._get_workspace(
+            os.environ["AZURE_ML_SUBSCRIPTION_ID"],
+            os.environ["AZURE_ML_RESOURCE_GROUP"],
+            os.environ["AZURE_ML_WORKSPACE_NAME"]
+        )
+        data = []
+        for image in labels:
+            data.append([
+                image["image_url"],
+                image["label"],
+                image["label_confidence"]
+            ])
+
+        columns = ["image_url", "label", "label_confidence"]
+        df = pd.DataFrame(data, columns=columns)
+        Path("tmp").mkdir(parents=True, exist_ok=True)
+        local_path = f'tmp/{name}.csv'
+        df.to_csv(local_path, index=False)
+
+        datastore = AzureWrapper._get_datastore(
+            ws,
+            os.environ["AZURE_ML_DATASTORE"]
+        )
+
+        # upload the local file from src_dir to the target_path in datastore
+        datastore.upload(src_dir="tmp", target_path="label_sets")
+        dataset = Dataset.Tabular.from_delimited_files(
+            path=[(datastore, (f"label_sets/{name}.csv"))]
+        )
+        logger.info(
+            f"Uploaded labels CSV to {datastore}/label_sets/{name}.csv")
+
+        dataset.register(
+            workspace=ws,
+            name=name,
+            description=description,
+            create_new_version=True
+        )
+
+        os.remove(local_path)

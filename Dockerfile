@@ -1,11 +1,12 @@
-FROM python:3.7-alpine
+FROM python:3.7-slim
 
 # Install build dependencies
-RUN apk update && apk add postgresql-dev gcc python3-dev musl-dev
-RUN apk add --virtual=build gcc libffi-dev musl-dev openssl-dev make cmake g++
+# RUN apk update && apk add postgresql-dev gcc python3-dev musl-dev
+# RUN apk add --virtual=build gcc libffi-dev musl-dev openssl-dev make cmake g++
 
-RUN apk add jpeg-dev zlib-dev
-ENV LIBRARY_PATH=/lib:/usr/lib
+# RUN apk add jpeg-dev zlib-dev
+RUN apt-get update && apt-get -y install gcc libpq-dev
+# ENV LIBRARY_PATH=/lib:/usr/lib
 
 # Install dependencies
 COPY requirements.txt ./

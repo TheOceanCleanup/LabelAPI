@@ -1,8 +1,15 @@
 from common.db import db
+from common.azure import AzureWrapper
 from sqlalchemy.dialects.postgresql import JSONB
 from models.user import User, Role
 from models.image import Image
 from models.object import Object
+from threading import Thread
+from flask import current_app
+import logging
+
+
+logger = logging.getLogger("label-api")
 
 
 class Campaign(db.Model):
@@ -198,10 +205,84 @@ class Campaign(db.Model):
 
         # Handle finishing actions
         if self.status == 'finished':
-            # TODO: Export datasets
-            pass
+            t = Thread(
+                target=self.finish_campaign,
+                args=(
+                    current_app._get_current_object(),
+                    db,
+                    self.id,
+                    self.title
+                )
+            )
+            t.start()
 
         return True
+
+    def finish_campaign(self, app, db, campaign_id, campaign_title):
+        """
+        The campaign is finished. At this point, we need to export two things
+        to Azure ML: The images as <campaign_title>_images and the labels as
+        <campaign_title>_labels.
+
+        Is meant to be run as a thread.
+
+        TODO: For future improvements, consider detecting the datastore based
+              on the container component of the image path. For now this does
+              not seem to be necessary, as we'll only use one container.
+        """
+        logger.info("Starting thread for finishing campaign")
+        paths = []
+        labels = []
+        campaign_title = campaign_title.lower().replace(" ", "-")
+
+        with app.app_context():
+            campaign_images = CampaignImage.query.filter(
+                CampaignImage.campaign_id == campaign_id).all()
+            for campaign_image in campaign_images:
+                path = campaign_image.image.blobstorage_path
+                path = path.lstrip('/')
+                container = path.split("/")[0]
+                filepath = "/".join(path.split("/")[1:])
+
+                paths.append(filepath)
+
+                # Determine all objects and add to list.
+                labels.append({
+                    'image_url': filepath,
+                    'label': [
+                        {
+                            'label': x.label_translated,
+                            'bottomX': x.x_min,
+                            'topX': x.x_max,
+                            'bottomY': x.y_min,
+                            'topY': x.y_max
+                        }
+                        for x in campaign_image.objects
+                    ],
+                    'label_confidence': [
+                        x.confidence for x in campaign_image.objects
+                    ]
+                })
+
+            AzureWrapper.export_images_to_ML(
+                campaign_title + "_images",
+                f"Exported dataset as result of the finishing of labeling " +
+                f"campaign {campaign_title}",
+                paths
+            )
+            logger.info(
+                f"Exported images to AzureML dataset {campaign_title}_images")
+
+            AzureWrapper.export_labels_to_ML(
+                campaign_title + "_labels",
+                f"Exported labels as result of the finishing of labeling " +
+                f"campaign {campaign_title}",
+                labels
+            )
+            logger.info(
+                f"Exported labels to AzureML dataset {campaign_title}_labels")
+
+            logger.info("Thread for finishing capaign set done")
 
     @staticmethod
     def create(labeler_email, title, created_by, metadata=None,
@@ -209,8 +290,6 @@ class Campaign(db.Model):
         """
         Create a new campaign, adding the correct users and roles where
         applicable.
-
-        #TODO: Do we need to add some exception / rollback here?
 
         :param labeler_email:       E mail address for the labeler user
         :param title:               Title for the campaign. Should be unique
