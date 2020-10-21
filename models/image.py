@@ -224,9 +224,6 @@ class ImageSet(db.Model):
                             flask.current_app._get_current_object())
         :param db:          The database object
         """
-        assert "AZURE_STORAGE_IMAGESET_CONTAINER" in os.environ
-        assert "AZURE_STORAGE_IMAGESET_FOLDER" in os.environ
-
         logger.info("Starting thread for finishing image set")
 
         target_container = os.environ["AZURE_STORAGE_IMAGESET_CONTAINER"]
