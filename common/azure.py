@@ -268,13 +268,14 @@ class AzureWrapper:
             )
             return None, None, None
 
-        try:
-            img = Image.open(io.BytesIO(b.content))
-        except UnidentifiedImageError:
-            logging.warning(f"Not a valid image: {container} : {filepath}")
-            return None, None, None
+        with io.BytesIO(b.content) as img_data:
+            try:
+                img = Image.open(img_data)
+            except UnidentifiedImageError:
+                logging.warning(f"Not a valid image: {container} : {filepath}")
+                return None, None, None
 
-        return img.format, img.width, img.height
+            return img.format, img.width, img.height
 
     @staticmethod
     def _get_workspace(subscription_id, resource_group, workspace_name):
