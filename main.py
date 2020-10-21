@@ -15,15 +15,14 @@ class App:
 
     def __init__(self):
         """ Initialize app """
-
         app = connexion.FlaskApp(
             __name__,
-            specification_dir='.'
+            specification_dir="."
         )
-        app.app.config['SQLALCHEMY_DATABASE_URI'] = \
-            os.environ.get('DB_CONNECTION_STRING')
+        app.app.config["SQLALCHEMY_DATABASE_URI"] = \
+            os.environ.get("DB_CONNECTION_STRING")
 
-        app.app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+        app.app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
         app.app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {
             "pool_recycle": 60,
             "pool_size": 10
@@ -35,7 +34,7 @@ class App:
 
         login_manager.init_app(app.app)
 
-        app.add_api('api.yaml',
+        app.add_api("api.yaml",
                     strict_validation=True)
 
         self.app = app.app  # Flask app object

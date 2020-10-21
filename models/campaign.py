@@ -200,11 +200,11 @@ class Campaign(db.Model):
         if desired_status not in self.allowed_status_transitions[self.status]:
             return False
 
-        # self.status = desired_status
+        self.status = desired_status
         db.session.commit()
 
         # Handle finishing actions
-        if True:#self.status == 'finished':
+        if self.status == 'finished':
             t = Thread(
                 target=self.finish_campaign,
                 args=(
@@ -228,12 +228,13 @@ class Campaign(db.Model):
 
         TODO: For future improvements, consider detecting the datastore based
               on the container component of the image path. For now this does
-              not seem to be necessary.
+              not seem to be necessary, as we'll only use one container.
         """
-        print("Hi")
         logger.info("Starting thread for finishing campaign")
         paths = []
         labels = []
+        campaign_title = campaign_title.lower().replace(" ", "-")
+
         with app.app_context():
             campaign_images = CampaignImage.query.filter(
                 CampaignImage.campaign_id == campaign_id).all()
@@ -269,6 +270,8 @@ class Campaign(db.Model):
                 f"campaign {campaign_title}",
                 paths
             )
+            logger.info(
+                f"Exported images to AzureML dataset {campaign_title}_images")
 
             AzureWrapper.export_labels_to_ML(
                 campaign_title + "_labels",
@@ -276,9 +279,10 @@ class Campaign(db.Model):
                 f"campaign {campaign_title}",
                 labels
             )
+            logger.info(
+                f"Exported labels to AzureML dataset {campaign_title}_labels")
 
             logger.info("Thread for finishing capaign set done")
-            print("Bye")
 
     @staticmethod
     def create(labeler_email, title, created_by, metadata=None,
@@ -286,8 +290,6 @@ class Campaign(db.Model):
         """
         Create a new campaign, adding the correct users and roles where
         applicable.
-
-        #TODO: Do we need to add some exception / rollback here?
 
         :param labeler_email:       E mail address for the labeler user
         :param title:               Title for the campaign. Should be unique

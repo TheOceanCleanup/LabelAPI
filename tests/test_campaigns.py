@@ -3,6 +3,7 @@ from tests.shared import get_headers, add_user, add_imagesets, add_images, \
     create_basic_testset, add_images_campaigns
 from models.campaign import Campaign, CampaignImage
 from models.user import User, Role
+from common.azure import AzureWrapper
 import datetime
 import bcrypt
 
@@ -444,19 +445,118 @@ def test_get_campaign_metadata(client, app, db, mocker):
     assert response.json == expected
 
 
-# def test_change_campaign_status(client, app, db, mocker):
-#     headers = get_headers(db)
+def test_change_campaign_status(client, app, db, mocker):
+    headers = get_headers(db)
 
-#     # TODO: add some campaign to DB and set ID in url below
+    now, yesterday, user, img1, img2, img3, campaign1, campaign2, campaign3 = \
+        add_images_campaigns(db)
+    campaign1.status = "completed"
+    db.session.commit()
 
-#     json_payload = {
-#         "new_status": "active"
-#     }
+    json_payload = {
+        "new_status": "finished"
+    }
 
-#     response = client.put(
-#         "/api/v1/campaigns/1", json=json_payload, headers=headers)
-#     assert response.status_code == 200
-#     assert response.json == "Not Implemented: campaigns.change_status"
+    mocker.patch(
+        "models.campaign.Campaign.finish_campaign"
+    )
+
+    response = client.put(
+        "/api/v1/campaigns/1", json=json_payload, headers=headers)
+    assert response.status_code == 200
+    assert response.json == "ok"
+    assert campaign1.status == "finished"
+
+    Campaign.finish_campaign.assert_called_once()
+
+
+def test_change_campaign_status_invalid(client, app, db, mocker):
+    headers = get_headers(db)
+
+    now, yesterday, user, img1, img2, img3, campaign1, campaign2, campaign3 = \
+        add_images_campaigns(db)
+    campaign1.status = "active"
+    db.session.commit()
+
+    json_payload = {
+        "new_status": "finished"
+    }
+
+    mocker.patch(
+        "models.campaign.Campaign.finish_campaign"
+    )
+
+    response = client.put(
+        "/api/v1/campaigns/1", json=json_payload, headers=headers)
+    assert response.status_code == 409
+    assert campaign1.status == "active"
+
+    Campaign.finish_campaign.assert_not_called()
+
+
+def test_campaign_finish(client, app, db, mocker):
+    headers = get_headers(db)
+
+    now, yesterday = create_basic_testset(db)
+    campaign3 = db.session.query(Campaign).get(3)
+    campaign3.status = "active"
+    db.session.commit()
+
+    mocker.patch(
+        "models.campaign.AzureWrapper.export_images_to_ML"
+    )
+    mocker.patch(
+        "models.campaign.AzureWrapper.export_labels_to_ML"
+    )
+
+    campaign3.finish_campaign(app, db, 3, campaign3.title)
+
+    AzureWrapper.export_images_to_ML.assert_called_once_with(
+        "a-third-campaign_images",
+        "Exported dataset as result of the finishing of labeling campaign "
+        "a-third-campaign",
+        ["path/file1.png", "otherpath/file2.png"]
+    )
+    AzureWrapper.export_labels_to_ML.assert_called_once_with(
+        "a-third-campaign_labels",
+        "Exported labels as result of the finishing of labeling campaign "
+        "a-third-campaign",
+        [
+            {
+                "image_url": "path/file1.png",
+                "label": [
+                    {
+                        "label": "label1",
+                        "bottomX": 1,
+                        "topX": 2,
+                        "bottomY": 3,
+                        "topY": 4
+                    },
+                    {
+                        "label": "label2",
+                        "bottomX": 2,
+                        "topX": 3,
+                        "bottomY": 4,
+                        "topY": 5
+                    }
+                ],
+                "label_confidence": [None, None]
+            },
+            {
+                "image_url": "otherpath/file2.png",
+                "label": [
+                    {
+                        "label": "translated_label3",
+                        "bottomX": 6,
+                        "topX": 7,
+                        "bottomY": 8,
+                        "topY": 9
+                    }
+                ],
+                "label_confidence": [0.87]
+            }
+        ]
+    )
 
 
 def test_add_images_to_campaign_by_id(client, app, db, mocker):

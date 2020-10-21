@@ -64,8 +64,6 @@ class AzureWrapper:
                                 "delete", "read", "write"].
         :returns:               The URL with key for the given image.
         """
-        assert "AZURE_STORAGE_CONNECTION_STRING" in os.environ
-
         block_blob_service = BlockBlobService(
             connection_string=os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         )
@@ -111,8 +109,6 @@ class AzureWrapper:
                                 "read", "write"].
         :returns:               The URL with key for the given image.
         """
-        assert "AZURE_STORAGE_CONNECTION_STRING" in os.environ
-
         block_blob_service = BlockBlobService(
             connection_string=os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         )
@@ -186,7 +182,6 @@ class AzureWrapper:
         :param target_folder:       Folder to copy to, as prefix
         :returns:                   List of all copied files
         """
-        assert "AZURE_STORAGE_CONNECTION_STRING" in os.environ
         block_blob_service = BlockBlobService(
             connection_string=os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         )
@@ -228,7 +223,6 @@ class AzureWrapper:
         :param container:    Container to delete
         :returns:            Boolean indicating success
         """
-        assert "AZURE_STORAGE_CONNECTION_STRING" in os.environ
         block_blob_service = BlockBlobService(
             connection_string=os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         )
@@ -254,8 +248,6 @@ class AzureWrapper:
         :returns:           Tuple containing: image type, image width,
                             image height
         """
-        assert "AZURE_STORAGE_CONNECTION_STRING" in os.environ
-
         block_blob_service = BlockBlobService(
             connection_string=os.environ["AZURE_STORAGE_CONNECTION_STRING"]
         )
@@ -324,12 +316,6 @@ class AzureWrapper:
         :param images:      A list of image paths relative to the datastore
                             object in Azure ML.
         """
-        assert "AZURE_STORAGE_CONNECTION_STRING" in os.environ
-        assert "AZURE_ML_DATASTORE" in os.environ
-        assert "AZURE_ML_SUBSCRIPTION_ID" in os.environ
-        assert "AZURE_ML_RESOURCE_GROUP" in os.environ
-        assert "AZURE_ML_WORKSPACE_NAME" in os.environ
-
         ws = AzureWrapper._get_workspace(
             os.environ["AZURE_ML_SUBSCRIPTION_ID"],
             os.environ["AZURE_ML_RESOURCE_GROUP"],
@@ -377,12 +363,12 @@ class AzureWrapper:
         data = []
         for image in labels:
             data.append([
-                image['image_url'],
-                image['label'],
-                image['label_confidence']
+                image["image_url"],
+                image["label"],
+                image["label_confidence"]
             ])
 
-        columns = ['image_url', 'label', 'label_confidence']
+        columns = ["image_url", "label", "label_confidence"]
         df = pd.DataFrame(data, columns=columns)
         Path("tmp").mkdir(parents=True, exist_ok=True)
         local_path = f'tmp/{name}.csv'
@@ -394,10 +380,12 @@ class AzureWrapper:
         )
 
         # upload the local file from src_dir to the target_path in datastore
-        datastore.upload(src_dir='tmp', target_path='label_sets')
+        datastore.upload(src_dir="tmp", target_path="label_sets")
         dataset = Dataset.Tabular.from_delimited_files(
             path=[(datastore, (f"label_sets/{name}.csv"))]
         )
+        logger.info(
+            f"Uploaded labels CSV to {datastore}/label_sets/{name}.csv")
 
         dataset.register(
             workspace=ws,
