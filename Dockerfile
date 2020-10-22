@@ -31,4 +31,5 @@ ENV VERSION=$VERSION
 
 EXPOSE 8080
 
+ENV FLASK_APP=main.py:app
 CMD exec gunicorn --statsd-host=localhost:9125 --statsd-prefix=label-storage --bind :8080 --workers 2 --threads 4 wsgi:app

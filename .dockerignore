@@ -3,6 +3,5 @@ deploy
 tests
 test_requirements.txt
 pytest.ini
-migrations
 .coverage
 .gitignore
