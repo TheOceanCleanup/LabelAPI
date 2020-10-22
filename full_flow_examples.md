@@ -1,4 +1,14 @@
+# Introduction
+
+This file provides code/request examples for the full flow of adding images,
+exposing them to a labeling agency, accepting their results and finally
+exporting these results to Azure ML.
+
 # Required details
+
+The following details are required to work with this api. Here we use it for
+the admin, but the same thing is required for a labeler.
+
 ```
 api_url = "http://localhost:8080/api/v1"
 
@@ -11,7 +21,7 @@ admin = {
 
 # Create imageset
 
-First we create a new image set.
+Lets start with creating a new image set.
 
 ```
 body = {
@@ -29,13 +39,18 @@ r = requests.post(
 print(r.json())
 
 image_set_id = r.json()["imageset_id"]
-
 ```
+
+The response contains the created image set with, most importantly, the
+imageset id. This is what we use to perform operations on the image set. It
+also contains a `dropbox_url`, which is a SAS enabled URL to a container in
+Azure Blobstorage. This can be used to upload images to the system.
 
 # Upload images
 
 Use `dropbox_url` in response of previous request to upload images through
-(for example) storage explorer.
+for example storage explorer, or some other mechanism of uploading images to
+a container.
 
 # Finish the image set
 
@@ -56,11 +71,12 @@ print(r.json())
 ```
 
 Response will be "ok". In the background, the images are copied to their
-"final" storage location, and added to the database.
+"final" storage location, added to the database and added to the image set. The
+dropbox is then deleted. The image set status is set to `finished`.
 
 # Create a labeling campaign
 
-Lets create a labeling campaign.
+Now that we have some images in the system, lets create a labeling campaign.
 
 ```
 body = {
@@ -84,18 +100,24 @@ user_headers = {
     "Authentication-Key": r.json()["access_token]["apikey"],
     "Authentication-Secret": r.json()["access_token]["apikey"]
 }
-
 ```
 
 The API key generated here can be shared with the labeling partner. This will
-only give access to the operations on a campaign, and on reading an image. It
-will not allow access to any other operations. If this user already existed in
-the system (based on the email), no API secret will be returned as this is
+only give access to:
+
+- Listing all the images in the campaign(s) that the partner has access to.
+- Retrieving images that are part of the campaign(s) that the partner has
+  access to.
+- Adding new objects/labels to the campaign(s) that the partner has access to.
+
+It will not allow access to any other operations. If this user already existed
+in the system (based on the email), no API secret will be returned as this is
 stored in hashed form, so we don't know it.
 
 # Add images to the campaign
 
-Lets find all the images in the system first.
+Now we need to add some images to the campaign. Lets do this by first finding
+all the images in the system.
 
 ```
 r = requests.get(
@@ -105,11 +127,12 @@ r = requests.get(
 print(r.json())
 ```
 
-This shows there are 4 images in the system. This request supports pagination
-as it might return a lot of images. It is also possible to list the images in
-a single image set using `/image_sets/{image_set_id}/images`.
+This shows the images in the system. This request supports pagination, as it
+might return a lot of images. It is also possible to list the images in a
+single image set using `/image_sets/{image_set_id}/images`.
 
-Now we want to add these images to the created campaign:
+Now we want to add some images to the created campaign. In this example, we
+will add the images 1 through 4:
 
 ```
 body = [
@@ -127,7 +150,8 @@ r = requests.post(
 print(r.json())
 ```
 
-We can now see the campaign, and see that 0 out of 4 images have been labeled:
+If we now get the campaign details, we can see that 0 out of 4 images have been
+labeled:
 
 ```
 r = requests.get(
@@ -138,9 +162,13 @@ r = requests.get(
 print(r.json())
 ```
 
+We also see that the status is still `created`, meaning that the labeling
+partner can not submit labels yet.
+
 # Change the status of the campaign to active
 
-We need to indicate the campaign is ready for labeling:
+We need to indicate the campaign is ready for labeling. We set the status to
+`active`.
 
 ```
 body = {
@@ -167,16 +195,16 @@ They will first get a list of all images in the campaign:
 ```
 r = requests.get(
     f"{api_url}/campaign/{campaign_id}/images",
-    headers=headers
+    headers=user_headers
 )
 print(r.json())
 ```
 
 This list for every image a `url`. This is relative to the base url of the API.
 
-To retrieve an image, the labeling partner can do a normal GET request to
-`<api>/images/<image_id>`. This will redirect, with a SAS token, to the actual
-image.
+To retrieve an image, the labeling partner can do a normal GET request, with
+the key in the headers, to `<api>/images/<image_id>`.
+This will redirect, with a SAS token, to the actual image.
 
 ## Providing labels
 
@@ -239,7 +267,7 @@ body = [
 r = requests.put(
     f"{api_url}/campaign/{campaign_id}/objects" + ,
     data=body,
-    headers=headers
+    headers=user_headers
 )
 print(r.json())
 ```
@@ -247,7 +275,7 @@ print(r.json())
 If any objects already existed for a provided image, they will be overwritten.
 This allows the labeling partner to redo their labeling if required.
 
-As asdmin, lets check the progress:
+As admin, lets check the progress:
 
 ```
 r = requests.get(
@@ -288,7 +316,7 @@ body = [
 r = requests.put(
     f"{api_url}/campaign/{campaign_id}/objects" + ,
     data=body,
-    headers=headers
+    headers=user_headers
 )
 print(r.json())
 ```
@@ -298,8 +326,10 @@ labeled, and the campaign status is automatically set to "completed".
 
 ---
 **NOTE**
+
 If the labeling partner wants to override labels after this, the campaign must
 first be 'reopened' by changing the status to `active`.
+
 ---
 
 # Finishing the campaign and exporting the labels
