@@ -1,7 +1,11 @@
 from azure.storage.blob import BlockBlobService, BlobPermissions, \
     ContainerPermissions
+from azure.storage.common.retry import LinearRetry
 from azure.common import AzureException
 from azureml.core import Workspace, Dataset, Datastore
+from azureml.exceptions import AzureMLException, UserErrorException, \
+    ProjectSystemException
+from azureml._restclient.models.error_response import ErrorResponseException
 from PIL import Image, UnidentifiedImageError
 #from retrying import retry
 from datetime import datetime, timedelta
@@ -262,6 +266,7 @@ class AzureWrapper:
             logger.warning(f"Failed to delete container {container}")
             return False
 
+        logger.info("Deleted dropbox container " + container)
         return True
 
     @staticmethod
@@ -426,3 +431,123 @@ class AzureWrapper:
         )
 
         os.remove(local_path)
+
+    @staticmethod
+    def check_storage_connect():
+        """
+        Check if a connection can be made to the Blob Service. Use very
+        limited retry settings, so we don't take too much time.
+        """
+        block_blob_service = BlockBlobService(
+            connection_string=os.environ["AZURE_STORAGE_CONNECTION_STRING"],
+            socket_timeout=0.5
+        )
+        block_blob_service.retry = LinearRetry(backoff=0.5, max_attempts=1).retry
+        try:
+            block_blob_service.exists("somecontainer")
+        except AzureException:
+            logger.error("Failed to connect to Azure Storage")
+            return False, "Failed to connect to Azure Storage"
+
+        return True, None
+
+    @staticmethod
+    def check_container_exists():
+        """
+        Check if the required container exists.
+        """
+        block_blob_service = BlockBlobService(
+            connection_string=os.environ["AZURE_STORAGE_CONNECTION_STRING"]
+        )
+        container_name = os.environ["AZURE_STORAGE_IMAGESET_CONTAINER"]
+        if block_blob_service.exists(container_name):
+            return True, None
+        else:
+            logger.error(
+                f"Main container for storing images {container_name} does not "
+                f"exist")
+            return \
+                False, \
+                "Main container for images {container_name} does not exist"
+
+        return True, None
+
+    @staticmethod
+    def check_create_container():
+        container_name = "tmp-container-status-check"
+        if not AzureWrapper.create_container(container_name):
+            return False, "Can't create container"
+
+        if not AzureWrapper.delete_container(container_name):
+            return False, "Can't delete container"
+
+        return True, None
+
+    @staticmethod
+    def check_create_blob():
+        block_blob_service = BlockBlobService(
+            connection_string=os.environ["AZURE_STORAGE_CONNECTION_STRING"]
+        )
+        container_name = os.environ["AZURE_STORAGE_IMAGESET_CONTAINER"]
+        blob_name = 'tmp-blob-status-check'
+        try:
+            block_blob_service.create_blob_from_text(
+                container_name,
+                blob_name,
+                "text"
+            )
+        except AzureException:
+            logger.error("Failed to create blob on Azure Storage")
+            return False, "Failed to create blob on Azure Storage"
+
+        try:
+            block_blob_service.delete_blob(
+                container_name,
+                blob_name
+            )
+        except AzureException:
+            logger.error("Failed to delete blob on Azure Storage")
+            return False, "Failed to delete blob on Azure Storage"
+
+        return True, None
+
+    @staticmethod
+    def check_get_workspace():
+        try:
+            AzureWrapper._get_workspace(
+                os.environ["AZURE_ML_SUBSCRIPTION_ID"],
+                os.environ["AZURE_ML_RESOURCE_GROUP"],
+                os.environ["AZURE_ML_WORKSPACE_NAME"]
+            )
+        except UserErrorException as e:
+            logger.error(
+                f"Failed to get workspace - Incorrect subscription or user: " \
+                f"{e}")
+            return \
+                False, \
+                f"Failed to get workspace - Incorrect subscription or user: " \
+                f"{e}"
+        except ProjectSystemException as e:
+            logger.error(f"Failed to get workspace - Incorrect name: {e}")
+            return False, f"Failed to get workspace - Incorrect name: {e}"
+        except AzureMLException as e:
+            logger.error(f"Failed to get workspace - Unknown error: {e}")
+            return False, f"Failed to get workspace - Unknown error: {e}"
+
+        return True, None
+
+    @staticmethod
+    def datastore_exists():
+        ws = AzureWrapper._get_workspace(
+            os.environ["AZURE_ML_SUBSCRIPTION_ID"],
+            os.environ["AZURE_ML_RESOURCE_GROUP"],
+            os.environ["AZURE_ML_WORKSPACE_NAME"]
+        )
+        ds_name = os.environ["AZURE_ML_DATASTORE"]
+        try:
+            ds = AzureWrapper._get_datastore(ws, ds_name)
+        except ErrorResponseException as e:
+            logger.error(f"Failed to get datastore {ds_name}: {e}")
+            return False, f"Failed to get datastore {ds_name}: {e}"
+
+        return True, None

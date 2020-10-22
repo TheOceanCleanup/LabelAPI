@@ -1,10 +1,13 @@
 import connexion
 from flask_migrate import Migrate
+from flask import abort
 from models.campaign import Campaign, CampaignImage
 from models.image import Image, ImageSet
 from models.object import Object
 from models.user import User
-from common.db import db
+from common.db import db, status_check as db_status_check, \
+    version_check as db_version_check
+from common.azure import AzureWrapper
 from common.auth import login_manager
 from common.logger import create_logger
 import os
@@ -76,3 +79,115 @@ def handle_version():
     branch = os.environ.get("GIT_BRANCH", "?")
     commit = os.environ.get("GIT_COMMIT", "?")
     return "Version: %s (branch: %s, commit: %s)" % (version, branch, commit)
+
+
+@app.route("/info/status", methods=["GET"])
+def handle_status():
+    result = {
+        "database": {
+            "Can connect": False,
+            "Is correct version": False
+        },
+        "blobstorage": {
+            "Can connect": False,
+            "Container exists": False,
+            "Can create container": False,
+            "Can create blob": False
+        },
+        "azureml": {
+            "Can get workspace": False,
+            "Datastore exists": False
+        },
+        "environment": {
+            "FLASK_APP": False,
+            "DB_CONNECTION_STRING": False,
+            "AZURE_STORAGE_CONNECTION_STRING": False,
+            "AZURE_STORAGE_IMAGESET_CONTAINER": False,
+            "AZURE_STORAGE_IMAGESET_FOLDER": False,
+            "AZURE_ML_DATASTORE": False,
+            "AZURE_ML_SUBSCRIPTION_ID": False,
+            "AZURE_ML_RESOURCE_GROUP": False,
+            "AZURE_ML_WORKSPACE_NAME": False
+        },
+        "messages": []
+    }
+
+    # Start by checking the environment variables
+    for key in result["environment"].keys():
+        if key in os.environ:
+            result["environment"][key] = True
+        else:
+            result["messages"].append(
+                f"Required environment variable {key} missing"
+            )
+    
+    # If any environment variables are unset, don't even continue
+    if not all(result["environment"].values()):
+        result["messages"].append(
+            "Aborted further checks due to missing environment variables")
+        return result, 500
+
+    # Check database:
+    # - Connect to database
+    # - Schema version up to date
+    result["database"]["Can connect"], msg = db_status_check()
+    if msg is not None:
+        result["messages"].append(msg)
+
+    # Version check only makes sense if database is okay
+    if result["database"]["Can connect"]:
+        result["database"]["Is correct version"], msg = db_version_check()
+        if msg is not None:
+            result["messages"].append(msg)
+
+    # Check Azure Storage
+    # - Check if connection can be made to blob storage
+    # - Check if required container exists
+    # - Can create container
+    # - Can upload file to uploads directory
+    result["blobstorage"]["Can connect"], msg = \
+        AzureWrapper.check_storage_connect()
+    if msg is not None:
+        result["messages"].append(msg)
+
+    # Other checks only make sense if connection works
+    if result["blobstorage"]["Can connect"]:
+        result["blobstorage"]["Container exists"], msg = \
+            AzureWrapper.check_container_exists()
+        if msg is not None:
+            result["messages"].append(msg)
+
+        result["blobstorage"]["Can create container"], msg = \
+            AzureWrapper.check_create_container()
+        if msg is not None:
+            result["messages"].append(msg)
+
+        # Only if the container exists can we try to create a blob
+        if result["blobstorage"]["Container exists"]:
+            result["blobstorage"]["Can create blob"], msg = \
+                AzureWrapper.check_create_blob()
+            if msg is not None:
+                result["messages"].append(msg)
+
+    # Check Azure ML
+    # - Can load workspace
+    # - Datastore exists
+    result["azureml"]["Can get workspace"], msg = \
+        AzureWrapper.check_get_workspace()
+    if msg is not None:
+        result["messages"].append(msg)
+
+    # Checking if datastore exists only makes sense if we can get workspace
+    if result["azureml"]["Can get workspace"]:
+        result["azureml"]["Datastore exists"], msg = \
+            AzureWrapper.datastore_exists()
+        if msg is not None:
+            result["messages"].append(msg)
+
+    # Validate all results to determine if we need to return 200 OK or 500
+    if not all([
+                all(result.get(x, {}).values())
+                for x in ["database", "blobstorage", "azureml"]
+            ]):
+        return result, 500
+    return result
