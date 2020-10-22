@@ -53,7 +53,7 @@ def test_list_images(client, app, db, mocker):
                 "blobstorage_path": "/some/otherpath/file2.png",
                 "imageset": {
                     "imageset_id": 1,
-                    "title": "some image set"
+                    "title": "some-image-set"
                 },
                 "date_taken": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
                 "location": {
@@ -78,7 +78,7 @@ def test_list_images(client, app, db, mocker):
                 "blobstorage_path": "/some/otherpath/file3.png",
                 "imageset": {
                     "imageset_id": 1,
-                    "title": "some image set"
+                    "title": "some-image-set"
                 },
                 "date_taken": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
                 "location": {
@@ -132,7 +132,7 @@ def test_list_images_pagination(client, app, db, mocker):
                 "blobstorage_path": "/some/otherpath/file3.png",
                 "imageset": {
                     "imageset_id": 1,
-                    "title": "some image set"
+                    "title": "some-image-set"
                 },
                 "date_taken": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
                 "location": {

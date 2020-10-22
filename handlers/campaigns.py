@@ -1,4 +1,5 @@
 from common.auth import flask_login
+from common.azure import AzureWrapper
 from models.campaign import Campaign, CampaignImage
 from flask import abort
 import logging
@@ -189,6 +190,10 @@ def add_campaign(body):
     if Campaign.query.filter(Campaign.title == body["title"]).first() \
             is not None:
         abort(409, "Another campaign with this name already exists")
+
+    # Check if name is valid (Azure Storage limitations)
+    if not AzureWrapper.check_name(body["title"]):
+        abort(422, "Name is invalid - must be a valid Azure container name")
 
     response = Campaign.create(
         body["labeler_email"],

@@ -23,7 +23,7 @@ def test_list_imagesets(client, app, db, mocker):
         "image_sets": [
             {
                 "imageset_id": 1,
-                "title": "some image set",
+                "title": "some-image-set",
                 "status": "created",
                 "metadata": None,
                 "blobstorage_path": "/some/otherpath",
@@ -33,7 +33,7 @@ def test_list_imagesets(client, app, db, mocker):
             },
             {
                 "imageset_id": 2,
-                "title": "some other image set",
+                "title": "some-other-image-set",
                 "status": "created",
                 "metadata": None,
                 "blobstorage_path": "/some/path",
@@ -43,7 +43,7 @@ def test_list_imagesets(client, app, db, mocker):
             },
             {
                 "imageset_id": 3,
-                "title": "A third set",
+                "title": "a-third-set",
                 "status": "finished",
                 "metadata": {
                     "note": "Special Drone footage"
@@ -82,7 +82,7 @@ def test_list_imagesets_pagination(client, app, db, mocker):
         "image_sets": [
             {
                 "imageset_id": 3,
-                "title": "A third set",
+                "title": "a-third-set",
                 "status": "finished",
                 "metadata": {
                     "note": "Special Drone footage"
@@ -104,7 +104,7 @@ def test_list_imagesets_pagination(client, app, db, mocker):
 def test_new_imageset(client, app, db, mocker):
     headers = get_headers(db)
     json_payload = {
-        'title': 'Some test set',
+        'title': 'some-test-set',
         'metadata': {
             'field1': 'value1',
             'field2': {
@@ -126,7 +126,7 @@ def test_new_imageset(client, app, db, mocker):
 
     expected = {
         "imageset_id": 1,
-        "title": "Some test set",
+        "title": "some-test-set",
         "status": "created",
         "metadata": {
             "field1": "value1",
@@ -160,7 +160,7 @@ def test_new_imageset_already_exists(client, app, db, mocker):
     add_imagesets(db, user, datetime.datetime.now())
 
     json_payload = {
-        'title': 'some other image set'
+        'title': 'some-other-image-set'
     }
 
     response = client.post(
@@ -169,10 +169,26 @@ def test_new_imageset_already_exists(client, app, db, mocker):
     assert response.status_code == 409
 
 
+def test_new_imageset_invalid_name(client, app, db, mocker):
+    headers = get_headers(db)
+
+    user = add_user(db)
+    add_imagesets(db, user, datetime.datetime.now())
+
+    json_payload = {
+        'title': 'Some Image set'
+    }
+
+    response = client.post(
+        "/api/v1/image_sets", json=json_payload, headers=headers)
+
+    assert response.status_code == 422
+
+
 def test_new_imageset_azure_failure(client, app, db, mocker):
     headers = get_headers(db)
     json_payload = {
-        'title': 'Some test set',
+        'title': 'some-test-set',
         'metadata': {
             'field1': 'value1',
             'field2': {
@@ -372,7 +388,7 @@ def test_list_images_in_set(client, app, db, mocker):
                 "blobstorage_path": "/some/otherpath/file2.png",
                 "imageset": {
                     "imageset_id": 1,
-                    "title": "some image set"
+                    "title": "some-image-set"
                 },
                 "date_taken": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
                 "location": {
@@ -397,7 +413,7 @@ def test_list_images_in_set(client, app, db, mocker):
                 "blobstorage_path": "/some/otherpath/file3.png",
                 "imageset": {
                     "imageset_id": 1,
-                    "title": "some image set"
+                    "title": "some-image-set"
                 },
                 "date_taken": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
                 "location": {
@@ -448,7 +464,7 @@ def test_list_images_in_set_pagination(client, app, db, mocker):
                 "blobstorage_path": "/some/otherpath/file3.png",
                 "imageset": {
                     "imageset_id": 1,
-                    "title": "some image set"
+                    "title": "some-image-set"
                 },
                 "date_taken": now.strftime('%Y-%m-%dT%H:%M:%S.%fZ'),
                 "location": {

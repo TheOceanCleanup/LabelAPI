@@ -1,4 +1,5 @@
 from common.auth import flask_login
+from common.azure import AzureWrapper
 from models.image import ImageSet
 from flask import abort
 import logging
@@ -45,6 +46,11 @@ def add_imageset(body):
     if not flask_login.current_user.has_role("image-admin"):
         logger.warning("User not authorized")
         abort(401)
+
+
+    # Check if name is valid (Azure Storage limitations)
+    if not AzureWrapper.check_name(body["title"]):
+        abort(422, "Name is invalid - must be a valid Azure container name")
 
     success, sc, response = ImageSet.create(
         flask_login.current_user,

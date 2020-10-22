@@ -10,11 +10,39 @@ import logging
 import os
 import io
 import pandas as pd
+import string
 
 logger = logging.getLogger("label-api")
 
 
 class AzureWrapper:
+    @staticmethod
+    def check_name(name):
+        """
+        Check if a name is a valid name for use within Azure.
+
+        :params name:   The name to check.
+        :returns:       Boolean indicating if the name is valid.
+        """
+        # Length must be between 3 and 63. We prepend and append, so take of 10
+        if len(name) > 53:
+            return False
+
+        # All characters must be lowercase ascii, a number, or a dash (-)
+        for c in name:
+            if c not in string.ascii_lowercase + string.digits + '-':
+                return False
+
+        # Name can't start or end with a dash
+        if name[0] == '-' or name[-1] == '-':
+            return False
+
+        # Consecutive dashes are not allowed:
+        if '--' in name:
+            return False
+
+        return True
+
     @staticmethod
     def _create_permissions(permissions):
         """

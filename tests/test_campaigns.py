@@ -25,7 +25,7 @@ def test_list_campaigns(client, app, db, mocker):
         "campaigns": [
             {
                 "campaign_id": 1,
-                "title": "Some Campaign",
+                "title": "some-campaign",
                 "status": "finished",
                 "progress": {
                     "total": 1,
@@ -41,7 +41,7 @@ def test_list_campaigns(client, app, db, mocker):
             },
             {
                 "campaign_id": 2,
-                "title": "Some other Campaign",
+                "title": "some-other-campaign",
                 "status": "finished",
                 "progress": {
                     "total": 0,
@@ -57,7 +57,7 @@ def test_list_campaigns(client, app, db, mocker):
             },
             {
                 "campaign_id": 3,
-                "title": "A third Campaign",
+                "title": "a-third-campaign",
                 "status": "created",
                 "progress": {
                     "total": 2,
@@ -96,7 +96,7 @@ def test_list_campaigns_pagination(client, app, db, mocker):
         "campaigns": [
             {
                 "campaign_id": 3,
-                "title": "A third Campaign",
+                "title": "a-third-campaign",
                 "status": "created",
                 "progress": {
                     "total": 2,
@@ -123,7 +123,7 @@ def test_new_campaign(client, app, db, mocker):
     headers = get_headers(db)
 
     json_payload = {
-        "title": "Some test set",
+        "title": "some-test-set",
         "labeler_email": "labeler@example.com",
         "metadata": {
             "field1": "value1",
@@ -139,7 +139,7 @@ def test_new_campaign(client, app, db, mocker):
 
     expected = {
         "campaign_id": 1,
-        "title": "Some test set",
+        "title": "some-test-set",
         "status": "created",
         "progress": {
             "total": 0,
@@ -181,7 +181,7 @@ def test_new_campaign(client, app, db, mocker):
 
     # Check if actually added to DB
     item = db.session.query(Campaign).first()
-    assert item is not None and item.title == "Some test set"
+    assert item is not None and item.title == "some-test-set"
 
     # Check if user created and role set correctly
     user = db.session.query(User)\
@@ -218,7 +218,7 @@ def test_new_campaign_existing_user(client, app, db, mocker):
     db.session.commit()
 
     json_payload = {
-        "title": "Some test set",
+        "title": "some-test-set",
         "labeler_email": "labeler@example.com",
         "metadata": {
             "field1": "value1",
@@ -234,7 +234,7 @@ def test_new_campaign_existing_user(client, app, db, mocker):
 
     expected = {
         "campaign_id": 1,
-        "title": "Some test set",
+        "title": "some-test-set",
         "status": "created",
         "progress": {
             "total": 0,
@@ -278,7 +278,7 @@ def test_new_campaign_existing_user(client, app, db, mocker):
 
     # Check if actually added to DB
     item = db.session.query(Campaign).first()
-    assert item is not None and item.title == "Some test set"
+    assert item is not None and item.title == "some-test-set"
 
     # Check if user created and role set correctly
     user = db.session.query(User)\
@@ -312,7 +312,7 @@ def test_new_campaign_existing_user_no_key(client, app, db, mocker):
     db.session.commit()
 
     json_payload = {
-        "title": "Some test set",
+        "title": "some-test-set",
         "labeler_email": "labeler@example.com",
         "metadata": {
             "field1": "value1",
@@ -328,7 +328,7 @@ def test_new_campaign_existing_user_no_key(client, app, db, mocker):
 
     expected = {
         "campaign_id": 1,
-        "title": "Some test set",
+        "title": "some-test-set",
         "status": "created",
         "progress": {
             "total": 0,
@@ -371,7 +371,7 @@ def test_new_campaign_existing_user_no_key(client, app, db, mocker):
 
     # Check if actually added to DB
     item = db.session.query(Campaign).first()
-    assert item is not None and item.title == "Some test set"
+    assert item is not None and item.title == "some-test-set"
 
     # Check if user created and role set correctly
     user = db.session.query(User)\
@@ -399,7 +399,7 @@ def test_new_campaign_duplicate_title(client, app, db, mocker):
     create_basic_testset(db)
 
     json_payload = {
-        "title": "Some Campaign",  # This campaign should already exist
+        "title": "some-campaign",  # This campaign should already exist
         "labeler_email": "labeler@example.com",
         "metadata": {
             "field1": "value1",
@@ -418,6 +418,32 @@ def test_new_campaign_duplicate_title(client, app, db, mocker):
     assert response.status_code == 409
 
 
+def test_new_campaign_invalid_name(client, app, db, mocker):
+    headers = get_headers(db)
+
+    # Add some campaigns already
+    create_basic_testset(db)
+
+    json_payload = {
+        "title": "Some Campaign",  # This name is not valid
+        "labeler_email": "labeler@example.com",
+        "metadata": {
+            "field1": "value1",
+            "field2": {
+                "subfield1": "value2",
+                "subfield2": 3
+            }
+        },
+        "label_translations": {
+            "original_label": "translated_label"
+        }
+    }
+
+    response = client.post(
+        "/api/v1/campaigns", json=json_payload, headers=headers)
+    assert response.status_code == 422
+
+
 def test_get_campaign_metadata(client, app, db, mocker):
     headers = get_headers(db)
 
@@ -425,7 +451,7 @@ def test_get_campaign_metadata(client, app, db, mocker):
 
     expected = {
         "campaign_id": 3,
-        "title": "A third Campaign",
+        "title": "a-third-campaign",
         "status": "created",
         "progress": {
             "total": 2,

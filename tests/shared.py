@@ -76,7 +76,7 @@ def add_labeler_user(db, subject_type, subject_id):
 def add_imagesets(db, user, now):
     imgset1 = ImageSet(
         id=1,
-        title="some image set",
+        title="some-image-set",
         status="created",
         blobstorage_path="/some/otherpath",
         date_created=now,
@@ -84,7 +84,7 @@ def add_imagesets(db, user, now):
     )
     imgset2 = ImageSet(
         id=2,
-        title="some other image set",
+        title="some-other-image-set",
         status="created",
         blobstorage_path="/some/path",
         date_created=now,
@@ -92,7 +92,7 @@ def add_imagesets(db, user, now):
     )
     imgset3 = ImageSet(
         id=3,
-        title="A third set",
+        title="a-third-set",
         status="finished",
         meta_data={
             'note': 'Special Drone footage'
@@ -154,7 +154,7 @@ def add_images(db, imgset, now):
 def add_campaigns(db, user, now, yesterday):
     campaign1 = Campaign(
         id=1,
-        title="Some Campaign",
+        title="some-campaign",
         meta_data={
             "key": "value"
         },
@@ -168,7 +168,7 @@ def add_campaigns(db, user, now, yesterday):
     )
     campaign2 = Campaign(
         id=2,
-        title="Some other Campaign",
+        title="some-other-campaign",
         status="finished",
         date_created=yesterday,
         date_started=yesterday,
@@ -178,7 +178,7 @@ def add_campaigns(db, user, now, yesterday):
     )
     campaign3 = Campaign(
         id=3,
-        title="A third Campaign",
+        title="a-third-campaign",
         status="created",
         date_created=now,
         date_started=now,
