@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: label-storage
-        image: tocacr.azurecr.io/label-storage:1.0.0
+        image: tocacr.azurecr.io/label-storage:1.1.0
         env:
           - name: LOGLEVEL
             value: DEBUG
