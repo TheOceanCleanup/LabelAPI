@@ -107,7 +107,10 @@ def handle_status():
             "AZURE_ML_DATASTORE": False,
             "AZURE_ML_SUBSCRIPTION_ID": False,
             "AZURE_ML_RESOURCE_GROUP": False,
-            "AZURE_ML_WORKSPACE_NAME": False
+            "AZURE_ML_WORKSPACE_NAME": False,
+            "AZURE_ML_SP_TENANT_ID": False,
+            "AZURE_ML_SP_APPLICATION_ID": False,
+            "AZURE_ML_SP_PASSWORD": False
         },
         "messages": []
     }

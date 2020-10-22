@@ -3,9 +3,11 @@ from azure.storage.blob import BlockBlobService, BlobPermissions, \
 from azure.storage.common.retry import LinearRetry
 from azure.common import AzureException
 from azureml.core import Workspace, Dataset, Datastore
+from azureml.core.authentication import ServicePrincipalAuthentication
 from azureml.exceptions import AzureMLException, UserErrorException, \
     ProjectSystemException
 from azureml._restclient.models.error_response import ErrorResponseException
+from msrest.exceptions import AuthenticationError
 from PIL import Image, UnidentifiedImageError
 #from retrying import retry
 from datetime import datetime, timedelta
@@ -321,7 +323,18 @@ class AzureWrapper:
         :param workspace_name:      Name of the workspace
         :returns:                   Azure ML Workspace object
         """
-        return Workspace(subscription_id, resource_group, workspace_name)
+        service_principal = ServicePrincipalAuthentication(
+            tenant_id=os.environ["AZURE_ML_SP_TENANT_ID"],
+            service_principal_id=os.environ["AZURE_ML_SP_APPLICATION_ID"],
+            service_principal_password=os.environ["AZURE_ML_SP_PASSWORD"]
+        )
+
+        return Workspace(
+            subscription_id,
+            resource_group,
+            workspace_name,
+            auth=service_principal
+        )
 
     @staticmethod
     def _get_datastore(workspace, datastore_name):
@@ -530,6 +543,14 @@ class AzureWrapper:
         except ProjectSystemException as e:
             logger.error(f"Failed to get workspace - Incorrect name: {e}")
             return False, f"Failed to get workspace - Incorrect name: {e}"
+        except AuthenticationError as e:
+            logger.error(
+                f"Failed to get workspace - Unable to log in with " \
+                f"provided credentials: {e}")
+            return \
+                False, \
+                f"Failed to get workspace - Unable to log in with " \
+                f"provided credentials: {e}"
         except AzureMLException as e:
             logger.error(f"Failed to get workspace - Unknown error: {e}")
             return False, f"Failed to get workspace - Unknown error: {e}"

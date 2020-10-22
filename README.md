@@ -21,6 +21,9 @@ The following environment variables can/need to be provided
 | AZURE_ML_SUBSCRIPTION_ID | True | Subscription ID where the Azure ML workspace is located |
 | AZURE_ML_RESOURCE_GROUP | True | Resource Group where the Azure ML workspace is located |
 | AZURE_ML_WORKSPACE_NAME | True | Name of the Azure ML workspace |
+| AZURE_ML_SP_TENANT_ID | True | Parameters to service principal for Azure ML |
+| AZURE_ML_SP_APPLICATION_ID | True | Parameters to service principal for Azure ML |
+| AZURE_ML_SP_PASSWORD | True | Parameters to service principal for Azure ML |
 
 # API documentation
 
@@ -52,6 +55,11 @@ should be given a name, and then be provided as environment variable
 In addition, the `AZURE_ML_SUBSCRIPTION_ID`, `AZURE_ML_RESOURCE_GROUP` and
 `AZURE_ML_WORKSPACE_NAME` environment variables should be provided (see 
 above).
+
+Finally, a service principal should be created, and the credentials entered
+through the `AZURE_ML_SP_TENANT_ID`, `AZURE_ML_SP_APPLICATION_ID` and
+`AZURE_ML_SP_PASSWORD` environment variables. For creating the correct
+SP, see the example on https://render.githubusercontent.com/view/ipynb?commit=c1b125025ade0e48fa04c8e774ecedb8df5acdc0&enc_url=68747470733a2f2f7261772e67697468756275736572636f6e74656e742e636f6d2f417a7572652f4d616368696e654c6561726e696e674e6f7465626f6f6b732f633162313235303235616465306534386661303463386537373465636564623864663561636463302f686f772d746f2d7573652d617a7572656d6c2f6d616e6167652d617a7572656d6c2d736572766963652f61757468656e7469636174696f6e2d696e2d617a7572656d6c2f61757468656e7469636174696f6e2d696e2d617a7572656d6c2e6970796e62&nwo=Azure%2FMachineLearningNotebooks&path=how-to-use-azureml%2Fmanage-azureml-service%2Fauthentication-in-azureml%2Fauthentication-in-azureml.ipynb&repository_id=145148726&repository_type=Repository#Service-Principal-Authentication
 
 # Database
 
