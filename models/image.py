@@ -237,33 +237,33 @@ class ImageSet(db.Model):
         """
         logger.info("Started thread for finishing image set")
 
-        # Load the object again, to prevent any DB/threading issues
-        imgset = db.session.query(ImageSet).get(imgset_id)
-
-        target_container = os.environ["AZURE_STORAGE_IMAGESET_CONTAINER"]
-        folder_name = os.environ["AZURE_STORAGE_IMAGESET_FOLDER"] + "/" + \
-            imgset.title.lower().replace(" ", "-")
-
-        dropbox = imgset.blobstorage_path
-
-        # Copy all files from dropbox to final folder
-        files = AzureWrapper.copy_contents(
-            dropbox,
-            "",
-            target_container,
-            folder_name
-        )
-
-        if not files:
-            # Failed to copy
-            logger.warning(
-                "Failed to copy images from dropbox to uploads folder, "
-                "possibly partially")
-            return
-
-        logger.debug("Files copied")
-
         with app.app_context():
+            # Load the object again, to prevent any DB/threading issues
+            imgset = db.session.query(ImageSet).get(imgset_id)
+
+            target_container = os.environ["AZURE_STORAGE_IMAGESET_CONTAINER"]
+            folder_name = os.environ["AZURE_STORAGE_IMAGESET_FOLDER"] + "/" + \
+                imgset.title.lower().replace(" ", "-")
+
+            dropbox = imgset.blobstorage_path
+
+            # Copy all files from dropbox to final folder
+            files = AzureWrapper.copy_contents(
+                dropbox,
+                "",
+                target_container,
+                folder_name
+            )
+
+            if not files:
+                # Failed to copy
+                logger.warning(
+                    "Failed to copy images from dropbox to uploads folder, "
+                    "possibly partially")
+                return
+
+            logger.debug("Files copied")
+
             # Add images to DB
             for f in files:
                 path = f"{target_container}/{folder_name}/{f.name}"

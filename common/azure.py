@@ -387,7 +387,8 @@ class AzureWrapper:
             path=[(datastore, (f"label_sets/{name}.csv"))]
         )
         logger.info(
-            f"Uploaded labels CSV to {datastore}/label_sets/{name}.csv")
+            f'Uploaded labels CSV to {os.environ["AZURE_ML_DATASTORE"]}'
+            f'/label_sets/{name}.csv')
 
         dataset.register(
             workspace=ws,

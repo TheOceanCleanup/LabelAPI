@@ -151,7 +151,7 @@ class Campaign(db.Model):
         for item in objects:
             # Find campaign image.
             for x in self.campaign_images:
-                if x.id == item["image_id"]:
+                if x.image_id == item["image_id"]:
                     campaign_image = x
                     break
             else:
@@ -196,7 +196,7 @@ class Campaign(db.Model):
     allowed_status_transitions = {
         "created": ["active"],
         "active": ["completed"],
-        "completed": ["finished"],
+        "completed": ["active", "finished"],
         "finished": []
     }
 
@@ -331,11 +331,10 @@ class Campaign(db.Model):
             created_by=created_by
         )
         db.session.add(campaign)
+        db.session.commit()
 
         # Add role to user that gives access to the campaign
-        campaign.give_labeler_access(user, commit=False)
-
-        db.session.commit()
+        campaign.give_labeler_access(user, commit=True)
 
         response = campaign.to_dict()
         response["access_token"] = {
