@@ -73,6 +73,10 @@ paths:
                 $ref: "#/components/schemas/CreatedImageSet"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+        "422":
+          $ref: "#/components/responses/InvalidParameterError"
         default:
           $ref: "#/components/responses/Error"
   /image_sets/{imageset_id}:
@@ -107,6 +111,8 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         "404":
           $ref: "#/components/responses/DoesNotExistError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
         default:
           $ref: "#/components/responses/Error"
   /image_sets/{imageset_id}/images:
@@ -180,6 +186,8 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         "404":
           $ref: "#/components/responses/DoesNotExistError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
         default:
           $ref: "#/components/responses/Error"
 
@@ -357,6 +365,10 @@ paths:
                 $ref: "#/components/schemas/CreatedCampaign"
         "401":
           $ref: "#/components/responses/UnauthorizedError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
+        "422":
+          $ref: "#/components/responses/InvalidParameterError"
         default:
           $ref: "#/components/responses/Error"
   /campaigns/{campaign_id}:
@@ -416,6 +428,8 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         "404":
           $ref: "#/components/responses/DoesNotExistError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
         default:
           $ref: "#/components/responses/Error"
   /campaigns/{campaign_id}/images:
@@ -489,6 +503,8 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         "404":
           $ref: "#/components/responses/DoesNotExistError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
         default:
           $ref: "#/components/responses/Error"
   /campaigns/{campaign_id}/objects:
@@ -561,6 +577,8 @@ paths:
           $ref: "#/components/responses/UnauthorizedError"
         "404":
           $ref: "#/components/responses/DoesNotExistError"
+        "409":
+          $ref: "#/components/responses/ConflictError"
         default:
           $ref: "#/components/responses/Error"
 
@@ -1239,6 +1257,27 @@ components:
               error:
                 type: string
                 example: The requested resource does not exist
+    ConflictError:
+      description: The provided information would cause a conflicting state in
+        the system. The error message will indicate the conflict.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: Another item with this name already exists
+    InvalidParameterError:
+      description: A provided parameter is invalid.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              error:
+                type: string
+                example: The provided name is not a valid container name.
     Error:
       description: A generic error message
       content:
