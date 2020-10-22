@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: label-storage
-        image: tocacr.azurecr.io/label-storage:1.1.0
+        image: tocacr.azurecr.io/label-storage:1.1.1
         env:
           - name: LOGLEVEL
             value: DEBUG
@@ -74,3 +74,6 @@ data:
   AZURE_ML_WORKSPACE_NAME: unknown
   AZURE_STORAGE_IMAGESET_CONTAINER: imageset
   AZURE_STORAGE_IMAGESET_FOLDER: upload
+  AZURE_ML_SP_TENANT_ID: unknown
+  AZURE_ML_SP_APPLICATION_ID: unknown
+  AZURE_ML_SP_PASSWORD: unknown
