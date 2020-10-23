@@ -481,7 +481,7 @@ class AzureWrapper:
                 f"exist")
             return \
                 False, \
-                "Main container for images {container_name} does not exist"
+                f"Main container for images {container_name} does not exist"
 
         return True, None
 

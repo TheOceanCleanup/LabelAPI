@@ -15,8 +15,9 @@ def status_check():
     Check whether a connection to the database can be made.
     """
     try:
-        db.session.execute("SELECT 1")
-        return True, None
+        with db.engine.connect() as conn:
+            conn.execute("SELECT 1")
+            return True, None
     except Exception as e:
         logger.error(f"Connect to database failed: {e}")
         return False, f"Failed to connect to database: {e}"
