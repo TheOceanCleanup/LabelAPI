@@ -33,7 +33,7 @@ body = {
 
 r = requests.post(
     f"{api_url}/image_sets",
-    data=body,
+    json=body,
     headers=headers
 )
 print(r.json())
@@ -64,7 +64,7 @@ body = {
 
 r = requests.put(
     f"{api_url}/image_sets/{image_set_id}",
-    data=body,
+    json=body,
     headers=headers
 )
 print(r.json())
@@ -89,7 +89,7 @@ body = {
 
 r = requests.post(
     f"{api_url}/campaigns",
-    data=body,
+    json=body,
     headers=headers
 )
 print(r.json())
@@ -97,8 +97,8 @@ print(r.json())
 campaign_id = r.json()["campaign_id"]
 
 user_headers = {
-    "Authentication-Key": r.json()["access_token]["apikey"],
-    "Authentication-Secret": r.json()["access_token]["apikey"]
+    "Authentication-Key": r.json()["access_token"]["apikey"],
+    "Authentication-Secret": r.json()["access_token"]["apisecret"]
 }
 ```
 
@@ -121,7 +121,7 @@ all the images in the system.
 
 ```
 r = requests.get(
-    f"{api_url}/images/",
+    f"{api_url}/images",
     headers=headers
 )
 print(r.json())
@@ -143,8 +143,8 @@ body = [
 ]
 
 r = requests.post(
-    f"{api_url}/campaign/{campaign_id}/images",
-    data=body,
+    f"{api_url}/campaigns/{campaign_id}/images",
+    json=body,
     headers=headers
 )
 print(r.json())
@@ -155,8 +155,8 @@ labeled:
 
 ```
 r = requests.get(
-    f"{api_url}/campaign/{campaign_id}",
-    data=body,
+    f"{api_url}/campaigns/{campaign_id}",
+    json=body,
     headers=headers
 )
 print(r.json())
@@ -176,8 +176,8 @@ body = {
 }
 
 r = requests.put(
-    f"{api_url}/campaign/{campaign_id}",
-    data=body,
+    f"{api_url}/campaigns/{campaign_id}",
+    json=body,
     headers=headers
 )
 print(r.json())
@@ -194,7 +194,7 @@ They will first get a list of all images in the campaign:
 
 ```
 r = requests.get(
-    f"{api_url}/campaign/{campaign_id}/images",
+    f"{api_url}/campaigns/{campaign_id}/images",
     headers=user_headers
 )
 print(r.json())
@@ -265,8 +265,8 @@ body = [
 ]
 
 r = requests.put(
-    f"{api_url}/campaign/{campaign_id}/objects" + ,
-    data=body,
+    f"{api_url}/campaigns/{campaign_id}/objects",
+    json=body,
     headers=user_headers
 )
 print(r.json())
@@ -279,8 +279,8 @@ As admin, lets check the progress:
 
 ```
 r = requests.get(
-    f"{api_url}/campaign/{campaign_id}",
-    data=body,
+    f"{api_url}/campaigns/{campaign_id}",
+    json=body,
     headers=headers
 )
 print(r.json())
@@ -314,8 +314,8 @@ body = [
 ]
 
 r = requests.put(
-    f"{api_url}/campaign/{campaign_id}/objects" + ,
-    data=body,
+    f"{api_url}/campaigns/{campaign_id}/objects",
+    json=body,
     headers=user_headers
 )
 print(r.json())
@@ -352,8 +352,8 @@ body = {
 }
 
 r = requests.put(
-    f"{api_url}/campaign/{campaign_id}",
-    data=body,
+    f"{api_url}/campaigns/{campaign_id}",
+    json=body,
     headers=headers
 )
 print(r.json())
