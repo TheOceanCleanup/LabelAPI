@@ -4,7 +4,7 @@ from flask import abort
 from models.campaign import Campaign, CampaignImage
 from models.image import Image, ImageSet
 from models.object import Object
-from models.user import User
+from models.user import User, Role
 from common.db import db, status_check as db_status_check, \
     version_check as db_version_check
 from common.azure import AzureWrapper

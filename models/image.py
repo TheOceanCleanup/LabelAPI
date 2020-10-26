@@ -14,10 +14,12 @@ logger = logging.getLogger("label-api")
 
 class Image(db.Model):
     __tablename__ = "image"
+    __table_args__ = {"schema": os.environ["DB_SCHEMA"]}
     id = db.Column(db.Integer, primary_key=True, unique=True)
     blobstorage_path = db.Column(db.String(1024), nullable=False, unique=True)
-    imageset_id = db.Column(db.Integer, db.ForeignKey("imageset.id"),
-                            nullable=True)
+    imageset_id = db.Column(
+        db.Integer, db.ForeignKey(f"{os.environ['DB_SCHEMA']}.imageset.id"),
+        nullable=True)
     date_taken = db.Column(db.DateTime, nullable=True)
     location_description = db.Column(db.String(1024), nullable=True)
     lat = db.Column(db.Float, nullable=True)
@@ -138,6 +140,7 @@ class Image(db.Model):
 
 class ImageSet(db.Model):
     __tablename__ = "imageset"
+    __table_args__ = {"schema": os.environ["DB_SCHEMA"]}
     id = db.Column(db.Integer, primary_key=True, unique=True)
     title = db.Column(db.String(128), nullable=False, unique=True)
     status = db.Column(
@@ -150,8 +153,9 @@ class ImageSet(db.Model):
     date_created = db.Column(db.DateTime, nullable=False,
                              server_default=db.func.now())
     date_finished = db.Column(db.DateTime, nullable=True)
-    created_by_id = db.Column(db.Integer, db.ForeignKey("user.id"),
-                              name="created_by", nullable=False)
+    created_by_id = db.Column(
+        db.Integer, db.ForeignKey(f"{os.environ['DB_SCHEMA']}.user.id"),
+        name="created_by", nullable=False)
 
     created_by = db.relationship(
         "User",

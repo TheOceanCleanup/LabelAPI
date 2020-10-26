@@ -1,5 +1,8 @@
 import pytest
 import os
+
+os.environ["DB_SCHEMA"] = "labelapi"
+
 from common.db import db as _db
 from main import App
 from flask import request
@@ -14,6 +17,7 @@ def app():
     os.environ["IMAGE_TOKEN_VALID_DAYS"] = "7"
     os.environ["AZURE_STORAGE_IMAGESET_CONTAINER"] = "upload-container"
     os.environ["AZURE_STORAGE_IMAGESET_FOLDER"] = "uploads"
+    os.environ["AZURE_STORAGE_CONNECTION_STRING"] = "connstring"
 
     app = App().app
     with app.app_context():

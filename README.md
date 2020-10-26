@@ -12,6 +12,7 @@ The following environment variables can/need to be provided
 | --- | --- | --- |
 | FLASK_APP | True | Should be set to `main.py:app`
 | DB_CONNECTION_STRING | True | Database connection string |
+| DB_SCHEMA | True | Database schema to use. Note that this must exist already |
 | AZURE_STORAGE_CONNECTION_STRING | True | Connection string for the blob storage account |
 | AZURE_STORAGE_IMAGESET_CONTAINER | True | Container where new imagesets will be uploaded |
 | AZURE_STORAGE_IMAGESET_FOLDER | True | Base folder (or path of folders) where new imagesets will be uploaded |

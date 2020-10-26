@@ -3,6 +3,8 @@ from __future__ import with_statement
 import logging
 from logging.config import fileConfig
 
+import os
+
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
 
@@ -87,6 +89,8 @@ def run_migrations_online():
         )
 
         with context.begin_transaction():
+            context.execute(
+                f'SET search_path TO {os.environ["DB_SCHEMA"]}, public')
             context.run_migrations()
 
 

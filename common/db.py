@@ -3,6 +3,7 @@ from alembic import config
 from alembic import script
 from alembic.runtime import migration
 import logging
+import os
 
 logger = logging.getLogger("label-api")
 
@@ -32,6 +33,7 @@ def version_check():
     latest_version = script_.get_current_head()
 
     with db.engine.connect() as conn:
+        conn.execute(f'SET search_path TO {os.environ["DB_SCHEMA"]}, public')
         installed_version = \
             migration.MigrationContext.configure(conn).get_current_revision()
 

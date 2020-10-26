@@ -8,6 +8,7 @@ Create Date: 2020-10-14 13:37:31.693315
 from alembic import op
 import sqlalchemy as sa
 from sqlalchemy.dialects import postgresql
+import os
 
 # revision identifiers, used by Alembic.
 revision = '8c4eddde7535'
@@ -25,7 +26,8 @@ def upgrade():
     sa.Column('API_SECRET', postgresql.BYTEA(), nullable=False),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('email'),
-    sa.UniqueConstraint('id')
+    sa.UniqueConstraint('id'),
+    schema=os.environ['DB_SCHEMA']
     )
     op.create_table('campaign',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -38,10 +40,11 @@ def upgrade():
     sa.Column('date_completed', sa.DateTime(), nullable=True),
     sa.Column('date_finished', sa.DateTime(), nullable=True),
     sa.Column('created_by', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['created_by'], ['user.id'], ),
+    sa.ForeignKeyConstraint(['created_by'], [os.environ['DB_SCHEMA'] + '.user.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('id'),
-    sa.UniqueConstraint('title')
+    sa.UniqueConstraint('title'),
+    schema=os.environ['DB_SCHEMA']
     )
     op.create_table('imageset',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -52,11 +55,12 @@ def upgrade():
     sa.Column('date_created', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
     sa.Column('date_finished', sa.DateTime(), nullable=True),
     sa.Column('created_by', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['created_by'], ['user.id'], ),
+    sa.ForeignKeyConstraint(['created_by'], [os.environ['DB_SCHEMA'] + '.user.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('blobstorage_path'),
     sa.UniqueConstraint('id'),
-    sa.UniqueConstraint('title')
+    sa.UniqueConstraint('title'),
+    schema=os.environ['DB_SCHEMA']
     )
     op.create_table('image',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -72,30 +76,33 @@ def upgrade():
     sa.Column('width', sa.Integer(), nullable=True),
     sa.Column('height', sa.Integer(), nullable=True),
     sa.Column('date_added', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
-    sa.ForeignKeyConstraint(['imageset_id'], ['imageset.id'], ),
+    sa.ForeignKeyConstraint(['imageset_id'], [os.environ['DB_SCHEMA'] + '.imageset.id'], ),
     sa.PrimaryKeyConstraint('id'),
     sa.UniqueConstraint('blobstorage_path'),
-    sa.UniqueConstraint('id')
+    sa.UniqueConstraint('id'),
+    schema=os.environ['DB_SCHEMA']
     )
     op.create_table('roles',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('role', sa.Enum('image-admin', 'labeler', name='role_types'), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('subject', sa.Integer(), nullable=True),
-    sa.ForeignKeyConstraint(['subject'], ['campaign.id'], ),
-    sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
+    sa.ForeignKeyConstraint(['subject'], [os.environ['DB_SCHEMA'] + '.campaign.id'], ),
+    sa.ForeignKeyConstraint(['user_id'], [os.environ['DB_SCHEMA'] + '.user.id'], ),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('id')
+    sa.UniqueConstraint('id'),
+    schema=os.environ['DB_SCHEMA']
     )
     op.create_table('campaign_image',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('campaign_id', sa.Integer(), nullable=False),
     sa.Column('image_id', sa.Integer(), nullable=False),
     sa.Column('labeled', sa.Boolean(), nullable=False),
-    sa.ForeignKeyConstraint(['campaign_id'], ['campaign.id'], ),
-    sa.ForeignKeyConstraint(['image_id'], ['image.id'], ),
+    sa.ForeignKeyConstraint(['campaign_id'], [os.environ['DB_SCHEMA'] + '.campaign.id'], ),
+    sa.ForeignKeyConstraint(['image_id'], [os.environ['DB_SCHEMA'] + '.image.id'], ),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('id')
+    sa.UniqueConstraint('id'),
+    schema=os.environ['DB_SCHEMA']
     )
     op.create_table('object',
     sa.Column('id', sa.Integer(), nullable=False),
@@ -108,9 +115,10 @@ def upgrade():
     sa.Column('x_max', sa.Integer(), nullable=False),
     sa.Column('y_min', sa.Integer(), nullable=False),
     sa.Column('y_max', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['campaign_image_id'], ['campaign_image.id'], ),
+    sa.ForeignKeyConstraint(['campaign_image_id'], [os.environ['DB_SCHEMA'] + '.campaign_image.id'], ),
     sa.PrimaryKeyConstraint('id'),
-    sa.UniqueConstraint('id')
+    sa.UniqueConstraint('id'),
+    schema=os.environ['DB_SCHEMA']
     )
     # ### end Alembic commands ###
 

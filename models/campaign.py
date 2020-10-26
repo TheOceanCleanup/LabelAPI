@@ -7,12 +7,14 @@ from models.object import Object
 from threading import Thread
 from flask import current_app
 import logging
+import os
 
 logger = logging.getLogger("label-api")
 
 
 class Campaign(db.Model):
     __tablename__ = "campaign"
+    __table_args__ = {"schema": os.environ["DB_SCHEMA"]}
     id = db.Column(db.Integer, primary_key=True, unique=True)
     title = db.Column(db.String(128), nullable=False, unique=True)
     meta_data = db.Column(JSONB, name="metadata", nullable=True)
@@ -28,8 +30,9 @@ class Campaign(db.Model):
     date_started = db.Column(db.DateTime, nullable=True)
     date_completed = db.Column(db.DateTime, nullable=True)
     date_finished = db.Column(db.DateTime, nullable=True)
-    created_by_id = db.Column(db.Integer, db.ForeignKey("user.id"),
-                              name="created_by", nullable=False)
+    created_by_id = db.Column(
+        db.Integer, db.ForeignKey(f"{os.environ['DB_SCHEMA']}.user.id"),
+        name="created_by", nullable=False)
 
     created_by = db.relationship(
         "User",
@@ -346,11 +349,14 @@ class Campaign(db.Model):
 
 class CampaignImage(db.Model):
     __tablename__ = "campaign_image"
+    __table_args__ = {"schema": os.environ["DB_SCHEMA"]}
     id = db.Column(db.Integer, primary_key=True, unique=True)
-    campaign_id = db.Column(db.Integer, db.ForeignKey("campaign.id"),
-                            nullable=False)
-    image_id = db.Column(db.Integer, db.ForeignKey("image.id"),
-                         nullable=False)
+    campaign_id = db.Column(
+        db.Integer, db.ForeignKey(f"{os.environ['DB_SCHEMA']}.campaign.id"),
+        nullable=False)
+    image_id = db.Column(
+        db.Integer, db.ForeignKey(f"{os.environ['DB_SCHEMA']}.image.id"),
+        nullable=False)
     labeled = db.Column(db.Boolean, nullable=False, default=False)
 
     campaign = db.relationship(

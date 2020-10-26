@@ -5,12 +5,14 @@ import bcrypt
 import flask_login
 import secrets
 import logging
+import os
 
 logger = logging.getLogger("label-api")
 
 
 class User(db.Model, flask_login.UserMixin):
     __tablename__ = "user"
+    __table_args__ = {"schema": os.environ["DB_SCHEMA"]}
     id = db.Column(db.Integer, primary_key=True, unique=True)
     email = db.Column(db.String(200), unique=True, nullable=False)
     public_key = db.Column(db.Text, unique=True, nullable=True)
@@ -114,12 +116,15 @@ class User(db.Model, flask_login.UserMixin):
 
 class Role(db.Model):
     __tablename__ = "roles"
+    __table_args__ = {"schema": os.environ["DB_SCHEMA"]}
     id = db.Column(db.Integer, primary_key=True, unique=True)
     role = db.Column(
         db.Enum("image-admin", "labeler", name="role_types"),
         nullable=False
     )
-    user_id = db.Column(db.Integer, db.ForeignKey("user.id"), nullable=False)
+    user_id = db.Column(
+        db.Integer, db.ForeignKey(f"{os.environ['DB_SCHEMA']}.user.id"),
+        nullable=False)
     subject_type = db.Column(db.String(128))
     subject_id = db.Column(db.Integer)
 

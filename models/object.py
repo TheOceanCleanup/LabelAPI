@@ -1,11 +1,15 @@
 from common.db import db
+import os
 
 
 class Object(db.Model):
     __tablename__ = "object"
+    __table_args__ = {"schema": os.environ["DB_SCHEMA"]}
     id = db.Column(db.Integer, primary_key=True, unique=True)
     campaign_image_id = db.Column(
-        db.Integer, db.ForeignKey("campaign_image.id"), nullable=False)
+        db.Integer,
+        db.ForeignKey(f"{os.environ['DB_SCHEMA']}.campaign_image.id"),
+        nullable=False)
     label_translated = db.Column(db.String(128), nullable=False)
     label_original = db.Column(db.String(128), nullable=True)
     confidence = db.Column(db.Float, nullable=True)
