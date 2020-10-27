@@ -27,6 +27,8 @@ spec:
               secretKeyRef:
                 name: database
                 key: connection_string
+          - name: DB_SCHEMA
+            value: machine_learning
           - name: AZURE_STORAGE_CONNECTION_STRING
             valueFrom:
               secretKeyRef:
@@ -73,11 +75,11 @@ metadata:
   name: lable-storage-azure-env
   namespace: staging
 data:
-  AZURE_ML_DATASTORE: unknown
+  AZURE_ML_DATASTORE: all_images
   AZURE_ML_SUBSCRIPTION_ID: a00eaec6-b320-4e7c-ae61-60a30aec1cfc
   AZURE_ML_RESOURCE_GROUP: MachineLearning
   AZURE_ML_WORKSPACE_NAME: RiverImageAnalysis
-  AZURE_STORAGE_IMAGESET_CONTAINER: imageset
+  AZURE_STORAGE_IMAGESET_CONTAINER: imagesets
   AZURE_STORAGE_IMAGESET_FOLDER: upload
   AZURE_ML_SP_TENANT_ID: 86f9fea7-9eb0-4325-8b58-7ed0db623956
   AZURE_ML_SP_APPLICATION_ID: fd7b3a10-27b6-4896-a2aa-da1bb8138e8f
