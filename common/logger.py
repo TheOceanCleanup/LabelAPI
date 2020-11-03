@@ -9,7 +9,10 @@ class RequestFormatter(logging.Formatter):
         try:
             if has_request_context():
                 if flask_login.current_user is not None:
-                    record.user = flask_login.current_user.email
+                    try:
+                        record.user = flask_login.current_user.email
+                    except:
+                        record.user = "anonymous"
                 else:
                     record.user = "anonymous"
 
@@ -45,5 +48,6 @@ def create_logger(loglevel):
         ch.setFormatter(log_format)
         logger.addHandler(ch)
         logger.setLevel(loglevel)
+        logger.propagate = False
 
     return logger
