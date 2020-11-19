@@ -488,10 +488,11 @@ class AzureWrapper:
     @staticmethod
     def check_create_container():
         container_name = "tmp-container-status-check"
-        if not AzureWrapper.create_container(container_name):
+        created_container = AzureWrapper.create_container(container_name)
+        if not created_container:
             return False, "Can't create container"
 
-        if not AzureWrapper.delete_container(container_name):
+        if not AzureWrapper.delete_container(created_container):
             return False, "Can't delete container"
 
         return True, None
