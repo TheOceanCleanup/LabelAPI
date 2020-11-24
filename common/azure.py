@@ -9,7 +9,7 @@ from azureml.exceptions import AzureMLException, UserErrorException, \
 from azureml._restclient.models.error_response import ErrorResponseException
 from msrest.exceptions import AuthenticationError
 from PIL import Image, UnidentifiedImageError
-#from retrying import retry
+from retrying import retry
 from datetime import datetime, timedelta
 from pathlib import Path
 import logging
@@ -348,6 +348,36 @@ class AzureWrapper:
         return Datastore.get(workspace, datastore_name)
 
     @staticmethod
+    @retry(stop_max_attempt_number=5, wait_exponential_multiplier=1000, wait_exponential_max=10000)
+    def _get_file_dataset(paths):
+        logger.info("Creating dataset")
+        logger.handlers[0].flush()
+
+        try:
+            return Dataset.File.from_files(
+                path=paths,
+                validate=False
+            )
+        except Exception as e:
+            logger.error(e)
+            raise e
+
+    @staticmethod
+    @retry(stop_max_attempt_number=3)
+    def _get_tabular_dataset(datastore, filename):
+        logger.info("Creating dataset")
+        logger.handlers[0].flush()
+
+        try:
+            return Dataset.Tabular.from_delimited_files(
+                path=[(datastore, (f"label_sets/{filename}.csv"))],
+                validate=False
+            )
+        except Exception as e:
+            logger.error(e)
+            raise e
+
+    @staticmethod
     def export_images_to_ML(name, description, images):
         """
         Export a list of images to an Azure ML dataset.
@@ -374,17 +404,25 @@ class AzureWrapper:
             os.environ["AZURE_ML_DATASTORE"]
         )
 
+        logger.info(f"Got Datastore {datastore}")
+        logger.info(images)
+
         paths = [(datastore, x) for x in images]
 
-        dataset = Dataset.File.from_files(
-            path=paths
-        )
+        logger.info(paths)
+
+        dataset = AzureWrapper._get_file_dataset(paths)
+
+        logger.info(f"Created Dataset {dataset}")
+
         dataset.register(
             workspace=ws,
             name=name,
             description=description,
             create_new_version=True
         )
+
+        logger.info(f"Registered Dataset {dataset}")
 
     @staticmethod
     def export_labels_to_ML(name, description, labels):
@@ -422,19 +460,25 @@ class AzureWrapper:
         local_path = f"tmp/{name}.csv"
         df.to_csv(local_path, index=False)
 
+        logger.info(f"Created local file")
+
         datastore = AzureWrapper._get_datastore(
             ws,
             os.environ["AZURE_ML_DATASTORE"]
         )
 
+        logger.info(f"Got Datastore {datastore}")
+
         # upload the local file from src_dir to the target_path in datastore
         datastore.upload(src_dir="tmp", target_path="label_sets")
-        dataset = Dataset.Tabular.from_delimited_files(
-            path=[(datastore, (f"label_sets/{name}.csv"))]
-        )
+
         logger.info(
             f'Uploaded labels CSV to {os.environ["AZURE_ML_DATASTORE"]}'
             f'/label_sets/{name}.csv')
+
+        dataset = AzureWrapper._get_tabular_dataset(datastore, name)
+
+        logger.info("Created dataset")
 
         dataset.register(
             workspace=ws,
@@ -442,6 +486,8 @@ class AzureWrapper:
             description=description,
             create_new_version=True
         )
+
+        logger.info("Registered dataset")
 
         os.remove(local_path)
 

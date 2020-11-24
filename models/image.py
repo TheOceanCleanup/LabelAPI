@@ -218,6 +218,7 @@ class ImageSet(db.Model):
                 target=self.finish_set,
                 args=(current_app._get_current_object(), db, self.id)
             )
+            t.daemon = True
             t.start()
 
         return True

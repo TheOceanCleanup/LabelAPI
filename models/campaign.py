@@ -241,6 +241,7 @@ class Campaign(db.Model):
                     self.title
                 )
             )
+            t.daemon = True
             t.start()
 
         return True
@@ -289,6 +290,8 @@ class Campaign(db.Model):
                         x.confidence for x in campaign_image.objects
                     ]
                 })
+
+            logger.info("Successfully parsed campaign image objects from DB")
 
             AzureWrapper.export_images_to_ML(
                 campaign_title + "_images",
