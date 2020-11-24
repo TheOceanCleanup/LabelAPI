@@ -360,6 +360,7 @@ class AzureWrapper:
             )
         except Exception as e:
             logger.error(e)
+            logger.handlers[0].flush()
             raise e
 
     @staticmethod
@@ -375,6 +376,7 @@ class AzureWrapper:
             )
         except Exception as e:
             logger.error(e)
+            logger.handlers[0].flush()
             raise e
 
     @staticmethod
