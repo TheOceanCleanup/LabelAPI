@@ -6,6 +6,7 @@ os.environ["DB_SCHEMA"] = "labelapi"
 from common.db import db as _db
 from main import App
 from flask import request
+import sqlalchemy
 
 port = 5005
 
@@ -22,6 +23,10 @@ def app():
     app = App().app
     with app.app_context():
         _db.close_all_sessions()
+
+        if not _db.engine.dialect.has_schema(_db.engine, 'labelapi'):
+            _db.engine.execute(sqlalchemy.schema.CreateSchema('labelapi'))
+
         _db.drop_all()
         _db.create_all()
 

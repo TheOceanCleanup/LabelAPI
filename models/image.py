@@ -208,6 +208,8 @@ class ImageSet(db.Model):
             return False
 
         self.status = desired_status
+        if desired_status == 'finished':
+            self.date_finished = db.func.now()
         db.session.commit()
 
         # Handle finishing actions

@@ -1188,7 +1188,7 @@ components:
     CampaignStatus:
       description: Status a campaign can be in
       type: string
-      enum: [created, active, complete, finished]
+      enum: [created, active, completed, finished]
 
     Paginate:
       type: object

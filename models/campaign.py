@@ -218,6 +218,16 @@ class Campaign(db.Model):
             return False
 
         self.status = desired_status
+
+        if desired_status == 'active':
+            self.date_started = db.func.now()
+            self.date_completed = None
+            self.date_finished = None
+        if desired_status == 'completed':
+            self.date_completed = db.func.now()
+            self.date_finished = None
+        if desired_status == 'finished':
+            self.date_finished = db.func.now()
         db.session.commit()
 
         # Handle finishing actions

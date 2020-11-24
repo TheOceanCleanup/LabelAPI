@@ -66,7 +66,7 @@ def test_list_campaigns(client, app, db, mocker):
                 "metadata": None,
                 "label_translations": None,
                 "date_created": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                "date_started": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "date_started": None,
                 "date_completed": None,
                 "date_finished": None,
                 "created_by": "someone@example.com"
@@ -105,7 +105,7 @@ def test_list_campaigns_pagination(client, app, db, mocker):
                 "metadata": None,
                 "label_translations": None,
                 "date_created": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-                "date_started": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+                "date_started": None,
                 "date_completed": None,
                 "date_finished": None,
                 "created_by": "someone@example.com"
@@ -460,7 +460,7 @@ def test_get_campaign_metadata(client, app, db, mocker):
         "metadata": None,
         "label_translations": None,
         "date_created": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
-        "date_started": now.strftime("%Y-%m-%dT%H:%M:%S.%fZ"),
+        "date_started": None,
         "date_completed": None,
         "date_finished": None,
         "created_by": "someone@example.com"
@@ -471,12 +471,13 @@ def test_get_campaign_metadata(client, app, db, mocker):
     assert response.json == expected
 
 
-def test_change_campaign_status(client, app, db, mocker):
+def test_change_campaign_status_completed_to_finished(client, app, db, mocker):
     headers = get_headers(db)
 
     now, yesterday, user, img1, img2, img3, campaign1, campaign2, campaign3 = \
         add_images_campaigns(db)
     campaign1.status = "completed"
+    campaign1.date_finished = None
     db.session.commit()
 
     json_payload = {
@@ -487,13 +488,63 @@ def test_change_campaign_status(client, app, db, mocker):
         "models.campaign.Campaign.finish_campaign"
     )
 
+    assert campaign1.date_finished is None
+
     response = client.put(
         "/api/v1/campaigns/1", json=json_payload, headers=headers)
     assert response.status_code == 200
     assert response.json == "ok"
     assert campaign1.status == "finished"
+    assert campaign1.date_finished is not None
 
     Campaign.finish_campaign.assert_called_once()
+
+
+def test_change_campaign_status_created_to_active(client, app, db, mocker):
+    headers = get_headers(db)
+
+    now, yesterday, user, img1, img2, img3, campaign1, campaign2, campaign3 = \
+        add_images_campaigns(db)
+    db.session.commit()
+
+    json_payload = {
+        "new_status": "active"
+    }
+
+    assert campaign3.date_started is None
+
+    response = client.put(
+        "/api/v1/campaigns/3", json=json_payload, headers=headers)
+    assert response.status_code == 200
+    assert response.json == "ok"
+    assert campaign3.status == "active"
+    assert campaign3.date_started is not None
+    assert campaign3.date_completed is None
+    assert campaign3.date_finished is None
+
+
+def test_change_campaign_status_active_to_completed(client, app, db, mocker):
+    headers = get_headers(db)
+
+    now, yesterday, user, img1, img2, img3, campaign1, campaign2, campaign3 = \
+        add_images_campaigns(db)
+    campaign3.status = "active"
+    campaign3.date_started = now
+    db.session.commit()
+
+    json_payload = {
+        "new_status": "completed"
+    }
+
+    assert campaign3.date_completed is None
+
+    response = client.put(
+        "/api/v1/campaigns/3", json=json_payload, headers=headers)
+    assert response.status_code == 200
+    assert response.json == "ok"
+    assert campaign3.status == "completed"
+    assert campaign3.date_completed is not None
+    assert campaign3.date_finished is None
 
 
 def test_change_campaign_status_invalid(client, app, db, mocker):

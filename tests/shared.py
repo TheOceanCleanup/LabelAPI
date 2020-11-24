@@ -181,7 +181,7 @@ def add_campaigns(db, user, now, yesterday):
         title="a-third-campaign",
         status="created",
         date_created=now,
-        date_started=now,
+        date_started=None,
         date_completed=None,
         date_finished=None,
         created_by=user

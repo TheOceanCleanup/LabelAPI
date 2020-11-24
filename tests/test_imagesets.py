@@ -237,10 +237,13 @@ def test_change_imageset_status(client, app, db, mocker):
         'new_status': 'finished'
     }
 
+    assert imgset1.date_finished is None
+
     response = client.put(
         "/api/v1/image_sets/1", json=json_payload, headers=headers)
     assert response.status_code == 200
     assert response.json == "ok"
+    assert imgset1.date_finished is not None
 
     ImageSet.finish_set.assert_called_once()
 
