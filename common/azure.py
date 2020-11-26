@@ -3,6 +3,7 @@ from azure.storage.blob import BlockBlobService, BlobPermissions, \
 from azure.storage.common.retry import LinearRetry
 from azure.common import AzureException
 from azureml.core import Workspace, Dataset, Datastore
+from azureml.data.dataset_factory import DataType
 from azureml.core.authentication import ServicePrincipalAuthentication
 from azureml.exceptions import AzureMLException, UserErrorException, \
     ProjectSystemException
@@ -326,7 +327,8 @@ class AzureWrapper:
         service_principal = ServicePrincipalAuthentication(
             tenant_id=os.environ["AZURE_ML_SP_TENANT_ID"],
             service_principal_id=os.environ["AZURE_ML_SP_APPLICATION_ID"],
-            service_principal_password=os.environ["AZURE_ML_SP_PASSWORD"]
+            service_principal_password=os.environ["AZURE_ML_SP_PASSWORD"],
+            _enable_caching=False
         )
 
         return Workspace(
@@ -372,7 +374,13 @@ class AzureWrapper:
         try:
             return Dataset.Tabular.from_delimited_files(
                 path=[(datastore, (f"label_sets/{filename}.csv"))],
-                validate=False
+                validate=False,
+                infer_column_types=False,
+                set_column_types={
+                    'image_url': DataType.to_string(),
+                    'label': DataType.to_string(),
+                    'label_confidence': DataType.to_string()
+                }
             )
         except Exception as e:
             logger.error(e)
