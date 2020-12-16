@@ -1,0 +1,85 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: label-storage
+  namespace: production
+spec:
+  selector:
+    matchLabels:
+      app: label-storage
+  template:
+    metadata:
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '9102'
+      labels:
+        app: label-storage
+        environment: production
+    spec:
+      containers:
+      - name: label-storage
+        image: tocacr.azurecr.io/label-storage:1.1.6
+        env:
+          - name: LOGLEVEL
+            value: DEBUG
+          - name: DB_CONNECTION_STRING
+            valueFrom:
+              secretKeyRef:
+                name: database
+                key: connection_string
+          - name: DB_SCHEMA
+            value: machine_learning
+          - name: AZURE_STORAGE_CONNECTION_STRING
+            valueFrom:
+              secretKeyRef:
+                name: storage-account
+                key: connection_string
+          - name: IMAGE_READ_TOKEN_VALID_DAYS
+            value: '7'
+          - name: IMAGESET_UPLOAD_TOKEN_VALID_DAYS
+            value: '7'
+          - name: AZURE_ML_SP_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: azure-ml-sp
+                key: password
+        envFrom:
+        - configMapRef:
+            name: lable-storage-azure-env
+        ports:
+        - containerPort: 8080
+      - name: statsd-exporter
+        image: tocacr.azurecr.io/statsd-exporter:v0.15.0
+        ports:
+        - name: statsd
+          containerPort: 9102
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: label-storage
+  namespace: production
+spec:
+  type: ClusterIP
+  ports:
+    - name: app
+      port: 8080
+    - name: statsd
+      port: 9102
+  selector:
+    app: label-storage
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lable-storage-azure-env
+  namespace: production
+data:
+  AZURE_ML_DATASTORE: all_images_production
+  AZURE_ML_SUBSCRIPTION_ID: a00eaec6-b320-4e7c-ae61-60a30aec1cfc
+  AZURE_ML_RESOURCE_GROUP: MachineLearning
+  AZURE_ML_WORKSPACE_NAME: RiverImageAnalysis
+  AZURE_STORAGE_IMAGESET_CONTAINER: imagesets
+  AZURE_STORAGE_IMAGESET_FOLDER: upload
+  AZURE_ML_SP_TENANT_ID: 86f9fea7-9eb0-4325-8b58-7ed0db623956
+  AZURE_ML_SP_APPLICATION_ID: fd7b3a10-27b6-4896-a2aa-da1bb8138e8f
