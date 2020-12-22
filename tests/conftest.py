@@ -3,6 +3,18 @@ import os
 
 os.environ["DB_SCHEMA"] = "labelapi"
 
+os.environ['NAMESPACE'] = "testing"
+os.environ['GIT_COMMIT'] = "new"
+os.environ['NODE_NAME'] = "localhost"
+os.environ['VERSION'] = 'test'
+os.environ['GIT_BRANCH'] = 'master'
+os.environ['HOSTNAME'] = 'this-pc'
+
+os.environ["DB_CONNECTION_STRING"] = \
+    'postgresql://toc:toc_pswd@localhost:5433/toc_test'
+os.environ["AZURE_STORAGE_CONNECTION_STRING"] = "connstring"
+os.environ['AZURE_ML_SP_PASSWORD'] = 'password'
+
 from common.db import db as _db
 from main import App
 from flask import request
@@ -13,12 +25,9 @@ port = 5005
 
 @pytest.fixture
 def app():
-    os.environ["DB_CONNECTION_STRING"] = \
-        'postgresql://toc:toc_pswd@localhost:5433/toc_test'
     os.environ["IMAGE_TOKEN_VALID_DAYS"] = "7"
     os.environ["AZURE_STORAGE_IMAGESET_CONTAINER"] = "upload-container"
     os.environ["AZURE_STORAGE_IMAGESET_FOLDER"] = "uploads"
-    os.environ["AZURE_STORAGE_CONNECTION_STRING"] = "connstring"
 
     app = App().app
     with app.app_context():

@@ -10,6 +10,7 @@ from common.db import db, status_check as db_status_check, \
 from common.azure import AzureWrapper
 from common.auth import login_manager
 from common.logger import create_logger
+from common.sentry import Sentry
 import os
 
 # Set up logging
@@ -21,6 +22,12 @@ class App:
     instance = None
 
     def __init__(self):
+        # Configure Sentry
+        sentry = Sentry("https://16f5d3ca5e42426cbafca33ff6a0786f@o486030.ingest.sentry.io/5567167")
+        sentry.add_sensitive_value(os.environ['DB_CONNECTION_STRING'])
+        sentry.add_sensitive_value(os.environ['AZURE_STORAGE_CONNECTION_STRING'])
+        sentry.add_sensitive_value(os.environ['AZURE_ML_SP_PASSWORD'])
+
         """ Initialize app """
         app = connexion.FlaskApp(
             __name__,

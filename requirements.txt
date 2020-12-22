@@ -48,6 +48,7 @@ PyYAML==5.3.1
 requests==2.24.0
 requests-oauthlib==1.3.0
 retrying==1.3.3
+sentry-sdk[flask]==0.19.5
 six==1.15.0
 SQLAlchemy==1.3.19
 swagger-ui-bundle==0.0.8
