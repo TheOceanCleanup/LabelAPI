@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: label-storage
-        image: tocacr.azurecr.io/label-storage:1.2.0
+        image: tocacr.azurecr.io/label-storage:1.2.1
         env:
           - name: LOGLEVEL
             value: DEBUG
@@ -51,6 +51,8 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: spec.nodeName
+          - name: TRANSACTION_SAMPLING_RATE
+            value: '0'
         envFrom:
         - configMapRef:
             name: lable-storage-azure-env

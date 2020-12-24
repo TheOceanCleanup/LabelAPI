@@ -25,7 +25,7 @@ class Sentry:
             environment=os.environ['NAMESPACE'],
             release=os.environ['GIT_COMMIT'],
             server_name=os.environ['NODE_NAME'],
-            traces_sample_rate=1.0,
+            traces_sample_rate=float(os.environ.get('TRANSACTION_SAMPLING_RATE', 0)),
             before_send=strip_sensitive_data,
             send_default_pii=True
         )
