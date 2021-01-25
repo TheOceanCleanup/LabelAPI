@@ -1,4 +1,5 @@
 from common.db import db
+from common.prometheus import number_of_available_images, total_storage_container_size
 from sqlalchemy.dialects.postgresql import JSONB
 from geoalchemy2 import Geometry
 from common.azure import AzureWrapper
@@ -296,6 +297,11 @@ class ImageSet(db.Model):
             db.session.commit()
 
         logger.debug("Image objects created")
+
+        # Update metrics
+        number_of_available_images.inc(len(files))
+        for f in files:
+            total_storage_container_size.inc(f.properties.content_length)
 
         # Delete dropbox
         AzureWrapper.delete_container(dropbox)

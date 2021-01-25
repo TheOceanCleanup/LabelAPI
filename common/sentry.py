@@ -22,18 +22,18 @@ class Sentry:
         sentry_sdk.init(
             dsn=dsn,
             integrations=[FlaskIntegration()],
-            environment=os.environ['NAMESPACE'],
-            release=os.environ['GIT_COMMIT'],
-            server_name=os.environ['NODE_NAME'],
+            environment=os.environ.get('NAMESPACE', ''),
+            release=os.environ.get('GIT_COMMIT', ''),
+            server_name=os.environ.get('NODE_NAME', ''),
             traces_sample_rate=float(os.environ.get('TRANSACTION_SAMPLING_RATE', 0)),
             before_send=strip_sensitive_data,
             send_default_pii=True
         )
 
         # Set tags for version, branch, and host_name
-        sentry_sdk.set_tag("version", os.environ['VERSION'])
-        sentry_sdk.set_tag("branch", os.environ['GIT_BRANCH'])
-        sentry_sdk.set_tag("host_name", os.environ['HOSTNAME'])
+        sentry_sdk.set_tag("version", os.environ.get('VERSION', ''))
+        sentry_sdk.set_tag("branch", os.environ.get('GIT_BRANCH', ''))
+        sentry_sdk.set_tag("host_name", os.environ.get('HOSTNAME', ''))
 
     def add_sensitive_value(self, value):
         self.sensitive_data.append(value)

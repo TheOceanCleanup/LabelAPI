@@ -1,6 +1,7 @@
 import connexion
 from flask_migrate import Migrate
 from flask import abort
+from prometheus_client import CollectorRegistry, generate_latest, multiprocess
 from models.campaign import Campaign, CampaignImage
 from models.image import Image, ImageSet
 from models.object import Object
@@ -11,6 +12,7 @@ from common.azure import AzureWrapper
 from common.auth import login_manager
 from common.logger import create_logger
 from common.sentry import Sentry
+from common.prometheus import number_of_available_images
 import os
 
 # Set up logging
@@ -24,9 +26,9 @@ class App:
     def __init__(self):
         # Configure Sentry
         sentry = Sentry("https://16f5d3ca5e42426cbafca33ff6a0786f@o486030.ingest.sentry.io/5567167")
-        sentry.add_sensitive_value(os.environ['DB_CONNECTION_STRING'])
-        sentry.add_sensitive_value(os.environ['AZURE_STORAGE_CONNECTION_STRING'])
-        sentry.add_sensitive_value(os.environ['AZURE_ML_SP_PASSWORD'])
+        sentry.add_sensitive_value(os.environ.get('DB_CONNECTION_STRING', ''))
+        sentry.add_sensitive_value(os.environ.get('AZURE_STORAGE_CONNECTION_STRING', ''))
+        sentry.add_sensitive_value(os.environ.get('AZURE_ML_SP_PASSWORD', ''))
 
         """ Initialize app """
         app = connexion.FlaskApp(
@@ -78,6 +80,13 @@ app = get_app().app
 @app.before_request
 def before_request_func():
     logger.info("")
+
+
+@app.route("/metrics", methods=["GET"])
+def metrics():
+    registry = CollectorRegistry()
+    multiprocess.MultiProcessCollector(registry)
+    return generate_latest(registry)
 
 
 @app.route("/info/version", methods=["GET"])

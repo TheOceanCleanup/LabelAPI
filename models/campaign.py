@@ -1,5 +1,6 @@
 from common.db import db
 from common.azure import AzureWrapper
+from common.prometheus import number_of_labeled_images, number_of_bounding_boxes_per_image, number_of_unlabeled_images
 from sqlalchemy.dialects.postgresql import JSONB
 from models.user import User, Role
 from models.image import Image
@@ -131,6 +132,10 @@ class Campaign(db.Model):
 
         # Now that everything is done with no errors, we can commit.
         db.session.commit()
+
+        # Update metrics
+        number_of_unlabeled_images.inc(len(images))
+
         return True, None, None
 
     def add_objects(self, objects):
@@ -193,6 +198,12 @@ class Campaign(db.Model):
         # Check if all campaign_images are labeled
         if all([x.labeled for x in self.campaign_images]):
             self.change_status("completed")
+
+        # Update the metrics
+        number_of_labeled_images.inc(len(objects))
+        number_of_unlabeled_images.inc(-len(objects))
+        for o in objects:
+            number_of_bounding_boxes_per_image.observe(len(o['objects']))
 
         return True, None, None
 
