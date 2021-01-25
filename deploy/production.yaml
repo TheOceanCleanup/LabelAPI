@@ -11,14 +11,13 @@ spec:
     metadata:
       annotations:
         prometheus.io/scrape: 'true'
-        prometheus.io/port: '9102'
       labels:
         app: label-storage
         environment: production
     spec:
       containers:
       - name: label-storage
-        image: tocacr.azurecr.io/label-storage:1.2.2
+        image: tocacr.azurecr.io/label-storage:1.2.3
         env:
           - name: LOGLEVEL
             value: DEBUG
@@ -53,16 +52,24 @@ spec:
                 fieldPath: spec.nodeName
           - name: TRANSACTION_SAMPLING_RATE
             value: '0'
+          - name: prometheus_multiproc_dir
+            value: '/tmp/prom'
         envFrom:
         - configMapRef:
             name: lable-storage-azure-env
         ports:
         - containerPort: 8080
+        volumeMounts:
+          - name: prometheus-custom-metrics
+            mountPath: '/tmp/prom'
       - name: statsd-exporter
         image: tocacr.azurecr.io/statsd-exporter:v0.15.0
         ports:
         - name: statsd
           containerPort: 9102
+      volumes:
+      - name: prometheus-custom-metrics
+        emptyDir: {}
 ---
 apiVersion: v1
 kind: Service
