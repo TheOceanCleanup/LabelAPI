@@ -18,7 +18,7 @@ spec:
     spec:
       containers:
       - name: label-storage
-        image: tocacr.azurecr.io/label-storage:1.2.1
+        image: tocacr.azurecr.io/label-storage:1.2.4
         env:
           - name: LOGLEVEL
             value: DEBUG
@@ -37,7 +37,7 @@ spec:
           - name: IMAGE_READ_TOKEN_VALID_DAYS
             value: '7'
           - name: IMAGESET_UPLOAD_TOKEN_VALID_DAYS
-            value: '7'
+            value: '90'
           - name: AZURE_ML_SP_PASSWORD
             valueFrom:
               secretKeyRef:
