@@ -16,6 +16,10 @@
 
 import pytest
 import os
+import sys
+
+# Mock the common.prometheus module in order to avoid using the CollectorRegistry
+sys.modules['common.prometheus'] = __import__('prometheus_mock', globals={"__name__": __name__}, level=1)
 
 os.environ["DB_SCHEMA"] = "labelapi"
 
